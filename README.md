@@ -1,0 +1,2 @@
+# DistribuiraniSistemi
+Distribuirani sistemi - priprema
