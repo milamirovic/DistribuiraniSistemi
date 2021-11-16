@@ -1,0 +1,1 @@
+Usmeni deo ispita
