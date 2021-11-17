@@ -105,13 +105,13 @@ U programu može biti definisano više komunikatora i jedan proces može biti č
 int MPI_Comm_rank(MPI_Comm comm, int *rank)
 ```
 > Proces određuje svoj rank u komunikatoru korišćenjem MPI_Comm_rank funkcije
-> Isti proces može imati različite za rank u različitim komunikatorima. 
+> Isti proces može imati različite vrednosti za rank u različitim komunikatorima. 
 
 ### MPI_Comm_size funkcija
 ```
 int MPI_Comm_size(MPI_Comm comm, int *size)
 ```
-> Proces može odrediti veličinu komunikatora kome pripada pomoću funkcije MPI_comm_size
+> Proces može odrediti veličinu komunikatora kome pripada pomoću funkcije MPI_Comm_size
 
 
 ## Point-to-point komunikacija
@@ -175,3 +175,137 @@ Neka proces P0 ima MPI_Recv(od procesa P1) i MPI_Send(ka procesu P1).
 Neka proces P1 ima MPI_Recv(od P0) i MPI_Send(ka procesu P0). 
 
 Šta će da se desi? Pa upareni su MPI_Recv i MPI_Send procesa P0 i P1, kao i MPI_Send i MPI_Recv procesa P1. Javlja se uzajamno blokiranje.
+
+## Point-to-point komunikacija BEZ deadlock-a (uzajamnog iskljucivanja)
+```
+#include <stdio.h>
+#include <mpi.h>
+
+void main (int argc, char **argv) 
+{
+    int myrank; //id procesa
+    MPI_Status status;
+    int x, y;
+    MPI_Init(&argc, &argv); //inicijalizacija MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank); //proces pribavlja svoj rank
+    if(myrank == 0) 
+    {
+        //ako je u pitanju proces P0
+        x = 3;
+        MPI_Recv(&y, 1, MPI_INT, 1, 19, MPI_COMM_WORLD, &status);
+        MPI_Send(&x, 1, MPI_INT, 1, 17, MPI_COMM_WORLD);
+    }
+    else if(myrank == 1)
+    {
+        x = 5;
+        MPI_Send(&x, 1, MPI_INT, 0, 19, MPI_COMM_WORLD);
+        MPI_Recv(&y, 1, MPI_INT, 0, 17, MPI_COMM_WORLD, &status);
+    }
+    
+    printf("Proces %d y=%d", myrank, y);
+    MPI_Finalize();
+}
+```
+
+*Sta se dešava ovde?*
+Proces P0 dodeli vrednost x = 3 i iza toga čeka na odgovor procesa P1 sa MPI_Recv (blokira se na MPI_Recv ako u P1 jos nije došlo do MPI_Send). Istovremeno se izvršava proces P1 koji svoj x postavlja na 5. P1 stiže do MPI_Send, šalje svoje x = 5, od adrese x, jedan MPI_INT element. Šalje ga procesu 0, a oznaka poruke je 19. Sve navedeno odgovara MPI_Recv pozivu u P0, pa se to što šalje P1 prima u promenljivu y procesa P0. Zatim se u P0 izvršava MPI_Send, kojim se šalje vrednost za x iz procesa P0, a to je 3, šalje procesu P1 sa tagom 17. Pa se poruka prima u P1 u promenljivu y procesa P1. 
+
+## Zadatak 1
+*Napisati program koji uzima podatke od nultog procesa i šalje ih svim drugim procesima tako što ***proces i*** treba da primi podatke i pošalje ih ***procesu i+1***, sve dok se ne stigne do poslednjeg procesa. Unos podataka se završava nakon što se prenese negativna vrednost podatka od prvog do poslednjeg procesa.*
+
+U procesu P0 stalno se učitavaju vrednosti u promenljivu **value** i ta se vrednost šalje procesu P1. To se radi pomoću scanf i MPI_Send. 
+U procesu P1, primi se poruka od prethodnog procesa sa MPI_Recv i prosledi taj podatak sledećem. I tako se radi sve do poslednjeg priocesa koji samo prima poruku od prethodnog procesa. 
+Vrednosti se učitavaju u P0 sve dok je vrednost veća ili jednaka od 0. 
+
+```
+#include "mpi.h"
+#include <stdio.h>
+
+int main(int argc, char **argv) 
+{
+    int rank, value, size; 
+    //rank je id procesa, value je promenljiva u koju primamo i saljemo podatke
+    //size sluzi da razdvojimo one koji nisu poslednji proces
+    MPI_Status status;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);//svaki proces dobija svoj rank
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    do
+    {
+        if(rank == 0)
+        {
+            scanf("%d", &value); //učitamo vrednost
+            MPI_Send(&value, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD); 
+            //šaljemo je procesu P1
+        }
+        else
+        {
+            //ako nije proces P0
+            MPI_Recv(&value, 1, MPI_INT, rank -1, 0, MPI_COMM_WORLD, &status);
+            //primimo vrednost
+            if(rank < size - 1)
+            {
+                //ako je rank manji od poslednjeg ranka
+                //šaljemo vrednost sledećem rankuđ
+                //poslednji rank nema kome da šalje
+                MPI_Send(&vlue, 1, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
+            }
+        }
+        printf("Proces P%d ima %d\n", rank, value);
+    }while(value >= 0);
+    MPI_Finalize();
+    return 0;
+}
+```
+
+## Zadatak 2
+*Napisati program koji nalazi sumu prvih n celih brojeva korišćenjem point-to-point komunikacije, tako da svaki proces učestvuje u sumiranju.*
+
+P0 ima value(0) = rank(0) + 1 = 1
+P1 ima value(1) = value(0) + (rank(1) + 1) = 3
+P2 ima value(2) = value(1) + (rank(2) + 1) = 4
+...
+
+P0 šalje value sledećem procesu P1
+P1 prima value od P0 i šalje novi value procesu P2
+Svi procesi na dalje rade isto što i P1, primaju od prethodnog i novu vrednost šaju sledećem
+Poslednji samo prima vrednost i kreira novu vrednost, koju nigde ne šalje. 
+
+```
+#include <stdio.h>
+#include "mpi.h"
+
+int main(int argc, char **argv) 
+{
+    int myrank, numprocs, value;//numprocs je broj procesa
+    int sum = 0;
+    MPI_Status status;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if(myrank == 0) 
+    {
+        value = 1;
+        MPI_Send(&value, 1, MPI_INT, myrank + 1, 0, MPI_COMM_WORLD);
+    }
+    else 
+    {
+        if(myrank < numprocs - 1)
+        {
+            //ako nije poslednji proces 
+            MPI_Recv(&value, 1, MPI_INT, myrank - 1, 0, MPI_COMM_WORLD, &status);
+            sum = myrank + 1 + value;
+            MPI_Send(&sum, 1, MPI_INT, myrank + 1, 0, MPI_COMM_WORLD);
+        }
+        else
+        {
+            MPI_Recv(&value, 1, MPI_INT, myrank - 1, 0, MPI_COMM_WORLD, &status);
+            sum = myrank + 1 + value;
+            printf("my rank is %d, and final sum is %d\n", myrank, sum);
+        }
+    }
+    MPI_Finalize();
+}
+```
+> Ovo nije najoptimalniji način računanja sume. Zato se koriste drugi, bolji načini za sumiranje n celih brojeva. 
