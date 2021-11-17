@@ -114,7 +114,7 @@ int MPI_Comm_size(MPI_Comm comm, int *size)
 > Proces može odrediti veličinu komunikatora kome pripada pomoću funkcije MPI_Comm_size
 
 
-## Point-to-point komunikacija
+# Point-to-point komunikacija
 
 Komunikacija tipa: jedan proces šalje poruku, a drugi prima tu poruku. Point-to-point komunikacija između dva procesa uključuje komponente:
 
