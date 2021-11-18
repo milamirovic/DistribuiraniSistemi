@@ -460,22 +460,32 @@ Grupne operacije dele se na:
 >> | MPI_MINLOC | pored računanja min, daje i rank procesa koji ima tu vrednost (send/recv buff su strukture podataka!) |
 >> | MPI_MAXLOC | pored računanja max vrednosti, daje i rank procesa koji ima tu vrednost |
 
->>> ***Primer Reduce funkcije***
+>>> ***Primer Reduce funkcije kada je source jedna vrednost (count=1)***
 >>> ```
 >>> #include <stdio.h>
 >>> #include <mpi.h>
 >>> void main(int argc, char ** argv)
 >>> {
->>> int rank;
->>> int source, result, root;
->>> MPI_Init(&argc, &argv);
->>> MPI_Comm_rank(MPI_COMM_WORLD, &rank);
->>> root = 7;
->>> source = rank + 1;
->>> MPI_Reduce(&source, &result, 1, MPI_INT, MPI_PROD, root, MPI_COMM_WORLD);
->>> if(rank == root) 
->>> {
->>>     printf("PE: %d MPI_PROD result is %d\n", rank, result);
+>>>     int rank;
+>>>     int source, result, root;
+>>>     MPI_Init(&argc, &argv); //inicijalizacija programa
+>>>     MPI_Comm_rank(MPI_COMM_WORLD, &rank); //svaki proces dobija svoj rank
+>>>     root = 7; //root moze da bude bilo koji broj od aktivnih procesa
+>>>     source = rank + 1; //source ovako postaje za broj veci od trenutnog id-a procesa
+>>>     
+>>>     MPI_Reduce(&source, &result, 1, MPI_INT, MPI_PROD, root, MPI_COMM_WORLD);
+>>>     
+>>>     //svi izvrsavaju MPI_Reduce operaciju, iz svakog procesa se uzme 1 vrednost iz source 
+>>>     //(a to su vrednosti rank+1 za svaki proces: 1, 2, 3, 4, ...)
+>>>     //pa se izvrsava nad svim tim vrednostima MNOZENJE i generise se result u procesu koji je oznacen sa root
+>>>     
+>>>     if(rank == root) 
+>>>     {
+>>>          //ovo pitamo jer samo u root-u se nalazi result, drugi procesi nemaju result
+>>>          //da drugi procesi stampaju result bilo bi nan ili null
+>>>          printf("PE: %d MPI_PROD result is %d\n", rank, result);
+>>>     }
+>>>     MPI_Finalize();
 >>> }
->>> MPI_Finalize();
->>> }
+>>> ```
+>>> 
