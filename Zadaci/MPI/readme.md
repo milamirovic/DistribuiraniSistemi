@@ -415,34 +415,34 @@ void main(int argc, char **argv)
 
 ***Grupne operacije su operacije koje se primenjuju nad svim članovima jedne grupe.***
 
-***Operacija se izvršava kada svi procesi pozovu odgovarajuću operaciju sa svojim parametrima. Svaki proces mora da pozove grupnu operaciju da bi se ona obavila. ***
+***Operacija se izvršava kada svi procesi pozovu odgovarajuću operaciju sa svojim parametrima. Svaki proces mora da pozove grupnu operaciju da bi se ona obavila.***
 
 Grupne operacije dele se na:
 * **operacije za kontrolu procesa**, 
 * **operacije za globalna izračunavanja**
 * **operacija za prenos podataka**
 
-> ## Operacije za kontrolu procesa 
->> ### MPI_Barrier funkcija
->> ```
->> int MPI_Barrier (MPI_Comm comm);
->> ```
->>> **Funkcija MPI_Barrier implementira sinhronizacioni mehanizam poznat kao *barijera*. Proces se blokira na toj naredbi dok svi ostali procesi iz grupe ne dođu do te naredbe. Tada se svi procesi vraćaju daljem izvršenju.**
->>> ![enter image description here](https://i.imgur.com/dV8x7U3.jpg)
+## Operacije za kontrolu procesa 
+> ### MPI_Barrier funkcija
+> ```
+> int MPI_Barrier (MPI_Comm comm);
+> ```
+>> **Funkcija MPI_Barrier implementira sinhronizacioni mehanizam poznat kao *barijera*. Proces se blokira na toj naredbi dok svi ostali procesi iz grupe ne dođu do te naredbe. Tada se svi procesi vraćaju daljem izvršenju.**
+>> ![enter image description here](https://i.imgur.com/dV8x7U3.jpg)
 
-> ## Operacije za globalna izračunavanja
-> Ovde spadaju *operacije za redukciju podataka* i *operacija scan*. Operacija redukcije uzima podatke u ulaznim baferima svih procesa, primenjuje nad njima datu operaciju redukcije i smešta rezultat u root procesa. 
->> ### MPI_Reduce funkcija
->> ```
->> int MPI_Reduce(void * send_buffer, void * recv_buffer, int count, MPI_Datatype dtype, MPI_Op operation, int rank, MPI_Comm comm);
->> ```
->>> **send_buffer** je adresa bafera svih procesa gde se nalaze podaci nad kojima se obavlja operacija redukcije. Svaki proces će da ima u grupi svoj send_buffer. Reduce operacija će uzeti podatke u ulaznim baferima svih procesa i nad njima vrši redukciju pomoću operacije operation. 
->>> **recv_buffer** je adresa bafera root procesa. U njega Reduce funkcija smešta rezultat. To je bafer samo jednog procesa (čiji je rank naveden kao argument funkcije), ne svih procesa! 
->>> **count** je broj podataka u send i receive baferu nad kojima se obavlja operacija redukcije
->>> **dtype** je tip podataka u send i receive baferu
->>> **comm** je komunikator
->>> **operation** - operacija redukcije je definisana tim argumentom
->>> **rank** je identifikator root procesa
+ ## Operacije za globalna izračunavanja
+ Ovde spadaju *operacije za redukciju podataka* i *operacija scan*. Operacija redukcije uzima podatke u ulaznim baferima svih procesa, primenjuje nad njima datu operaciju redukcije i smešta rezultat u root procesa. 
+> ### MPI_Reduce funkcija
+> ```
+> int MPI_Reduce(void * send_buffer, void * recv_buffer, int count, MPI_Datatype dtype, MPI_Op operation, int rank, MPI_Comm comm);
+> ```
+>> **send_buffer** je adresa bafera svih procesa gde se nalaze podaci nad kojima se obavlja operacija redukcije. Svaki proces će da ima u grupi svoj send_buffer. Reduce operacija će uzeti podatke u ulaznim baferima svih procesa i nad njima vrši redukciju pomoću operacije operation. 
+>> **recv_buffer** je adresa bafera root procesa. U njega Reduce funkcija smešta rezultat. To je bafer samo jednog procesa (čiji je rank naveden kao argument funkcije), ne svih procesa! 
+>> **count** je broj podataka u send i receive baferu nad kojima se obavlja operacija redukcije
+>> **dtype** je tip podataka u send i receive baferu
+>> **comm** je komunikator
+>> **operation** - operacija redukcije je definisana tim argumentom
+>> **rank** je identifikator root procesa
 
 >> Operation može da ima sledeće vrednosti:
 >> | Vrednost | Značenje |
