@@ -176,7 +176,7 @@ Neka proces P1 ima MPI_Recv(od P0) i MPI_Send(ka procesu P0).
 
 Šta će da se desi? Pa upareni su MPI_Recv i MPI_Send procesa P0 i P1, kao i MPI_Send i MPI_Recv procesa P1. Javlja se uzajamno blokiranje.
 
-## Point-to-point komunikacija BEZ deadlock-a (uzajamnog iskljucivanja)
+# Point-to-point komunikacija BEZ deadlock-a (uzajamnog isključivanja)
 ```
 #include <stdio.h>
 #include <mpi.h>
@@ -309,3 +309,55 @@ int main(int argc, char **argv)
 }
 ```
 > Ovo nije najoptimalniji način računanja sume. Zato se koriste drugi, bolji načini za sumiranje n celih brojeva. 
+
+MPI podržava komunikaciju bez blokiranja, u kome jedan proces može započeti operaciju slanja ili prijema poruke, a nakon toga se može nastaviti sa obavljanjem drugog posla, pa se posle toga vraća da proveri završetak tj. status operacije. Ovde se slanje i prijem obavlja u 3 koraka:
+1. Iniciranje send/recv operacije pozivom funkcije ***MPI_Isend()/MPI_Irecv()*** (I je od Immidiately). 
+2. Obavljanje nekog posla tokom vremena komuniciranja 
+3. Čekanje na kompletiranje ili testiranje kompletiranja komunikacija korišćenjem funkcija ***MPI_Wait()*** ili ***MPI_Test()***.
+
+## MPI_Isend() funkcija
+Iz funkcije MPI_Isend() proces se vraća odmah, pre nego što poruka bude iskopirana u bafer. Sintaksa funkcije za slanje bez blokiranja je:
+```
+int MPI_Isend(void *buf, int count, MPI_Datatype dtype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
+```
+
+> **buf** je adresa odakle kreće slanje 
+
+> **count** je koliko podataka se šalje
+
+> **dtype** je tip podataka koji se šalju 
+
+> **dest** je destinacija
+
+> **tag** je oznaka poruke koja se šalje
+
+> **comm** je komunikator
+
+> promenljiva **request** je identifikator komunikacionog događaja. Na osnovu request se proverava (testira) status inicirane operacije ili kompletira njeno izvršenje. 
+
+> ***Program ne sme da modifikuje promenljivu buf nakon iniciranja operacije, sve dok MPI_Wait ili MPI_Test funkcija ne daju pozitivnu informaciju o kompletiranju operacije identifikovane na request. ***
+
+## MPI_Irecv() funkcija
+
+Proces vrši prijem bez blokiranja, tj. inicira prijem pomoću funkcije:
+
+```
+int MPI_Irecv(void *buf, int count, MPI_Datatype dtype, int source, int tag, MPI_Comm comm, MPI_Request *request);
+```
+
+***Iz ove funkcije se proces vraća odmah, bez potrebe za čekanjem da poruka bude smeštena u prijemni bafer. Za razliku od MPI_Recv ova funkcija ne vraća informaciju o statusu. Informacije o statusu se dobijaju pozivom funkcija MPI_Wait i MPI_Test. ***
+
+> **buf** je adresa odakle kreće prijem
+
+> **count** je broj elemenata koji će se primiti
+
+> **dtype** je tip podataka koji se primaju
+
+> **source** je id procesa od koga dolaz podaci
+
+> **tag** je oznaka poruke
+
+> **comm** je komunikator
+
+> **request** je identifikator komunikacionog događaja
+
