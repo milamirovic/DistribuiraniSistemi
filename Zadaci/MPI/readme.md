@@ -361,3 +361,9 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype dtype, int source, int tag, MPI
 
 > **request** je identifikator komunikacionog događaja
 
+> jndnwd
+> > nwddwo
+> > ```
+> > ennef
+> > ```
+> > oennf
