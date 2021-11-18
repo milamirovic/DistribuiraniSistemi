@@ -361,9 +361,121 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype dtype, int source, int tag, MPI
 
 > **request** je identifikator komunikacionog događaja
 
-> jndnwd
-> > nwddwo
-> > ```
-> > ennef
-> > ```
-> > oennf
+## MPI_Wait() funkcija 
+
+Funkcija koja se koristi za proveru kompletiranja operacija bez blokiranja je:
+```
+int MPI_Wait(MPI_Request * request, MPI_Status *status)
+```
+> Proces se iz ove funkcije vraća onda kada se operacija identifikovana sa **request** izvrši. Ako je inicirana operacija *MPI_Irecv()*, onda ***MPI_Status status*** čuva informaciju o izvoru poruke, oznaci poruke - tag, kao i broju primljenih podataka. U slučaju *MPI_Isend()*, status čuva informaciju o grešci. Ova operacija je blokirajuća. 
+
+## MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
+
+Funkcija MPI_Test vraća informaciju o trenutnom stanju operacije koja je identifikovana argumentom request:
+
+```
+int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status);
+```
+
+Argument **flag** je ***true*** ako je operacija završenja, u suprotnom je ***false***. Argument **status** sadrži dodatne statusne informacije. Ova operacija nije blokirajuća. 
+
+### Primer
+
+```
+#include <stdio.h>
+#include <mpi.h>
+
+void main(int argc, char **argv) 
+{
+    int myrank, x, y;
+    MPI_Request request;
+    MPI_Status status;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+    if(myrank == 0)
+    {
+        x = 3;
+        MPI_Irecv(&y, 1, MPI_INT, 1, 19, MPI_COMM_WORLD, &request);
+        MPI_Send(&x, 1, MPI_INT, 1, 17, MPI_COMM_WORLD);
+        MPI_Wait(&request, &status);
+    }
+    else if(myrank == 1)
+    {
+        x = 5;
+        MPI_Irecv(&y, 1, MPI_INT, 0, 17, MPI_COMM_WORLD, &request);
+        MPI_Send(&x, MPI_INT, 0, 19, MPI_COMM_WORLD);
+        MPI_Wait(&req, &status);
+    }
+    printf("Proces %d y=%d", myrank, y);
+    MPI_Finalize();
+}
+```
+
+# Grupne (collective) operacije
+
+***Grupne operacije su operacije koje se primenjuju nad svim članovima jedne grupe.***
+
+***Operacija se izvršava kada svi procesi pozovu odgovarajuću operaciju sa svojim parametrima. Svaki proces mora da pozove grupnu operaciju da bi se ona obavila. ***
+
+Grupne operacije dele se na:
+* **operacije za kontrolu procesa**, 
+* **operacije za globalna izračunavanja**
+* **operacija za prenos podataka**
+
+> ## Operacije za kontrolu procesa 
+>> ### MPI_Barrier funkcija
+>> ```
+>> int MPI_Barrier (MPI_Comm comm);
+>> ```
+>>> **Funkcija MPI_Barrier implementira sinhronizacioni mehanizam poznat kao *barijera*. Proces se blokira na toj naredbi dok svi ostali procesi iz grupe ne dođu do te naredbe. Tada se svi procesi vraćaju daljem izvršenju.**
+>>> ![enter image description here](https://i.imgur.com/dV8x7U3.jpg)
+
+> ## Operacije za globalna izračunavanja
+> Ovde spadaju *operacije za redukciju podataka* i *operacija scan*. Operacija redukcije uzima podatke u ulaznim baferima svih procesa, primenjuje nad njima datu operaciju redukcije i smešta rezultat u root procesa. 
+>> ### MPI_Reduce funkcija
+>> ```
+>> int MPI_Reduce(void * send_buffer, void * recv_buffer, int count, MPI_Datatype dtype, MPI_Op operation, int rank, MPI_Comm comm);
+>> ```
+>>> **send_buffer** je adresa bafera svih procesa gde se nalaze podaci nad kojima se obavlja operacija redukcije. Svaki proces će da ima u grupi svoj send_buffer. Reduce operacija će uzeti podatke u ulaznim baferima svih procesa i nad njima vrši redukciju pomoću operacije operation. 
+>>> **recv_buffer** je adresa bafera root procesa. U njega Reduce funkcija smešta rezultat. To je bafer samo jednog procesa (čiji je rank naveden kao argument funkcije), ne svih procesa! 
+>>> **count** je broj podataka u send i receive baferu nad kojima se obavlja operacija redukcije
+>>> **dtype** je tip podataka u send i receive baferu
+>>> **comm** je komunikator
+>>> **operation** - operacija redukcije je definisana tim argumentom
+>>> **rank** je identifikator root procesa
+
+>> Operation može da ima sledeće vrednosti:
+>> | Vrednost | Značenje |
+>> |--|--|
+>> | MPI_MAX | računanje maksimalne vrednosti od svih vrednosti u send_buff |
+>> | MPI_MIN | računanje minimalne vrednosti od svih iz send_buff |
+>> | MPI_SUM | suma svih vrednosti iz send_buff |
+>> | MPI_PROD | proizvod |
+>> | MPI_LAND | logički and |
+>> | MPI_BAND | bit and |
+>> | MPI_LOR | logički or |
+>> | MPI_BOR | bit or |
+>> | MPI_LXOR | logički xor |
+>> | MPI_BXOR | bit xor |
+>> | MPI_MINLOC | pored računanja min, daje i rank procesa koji ima tu vrednost (send/recv buff su strukture podataka!) |
+>> | MPI_MAXLOC | pored računanja max vrednosti, daje i rank procesa koji ima tu vrednost |
+
+>>> ***Primer Reduce funkcije***
+>>> ```
+>>> #include <stdio.h>
+>>> #include <mpi.h>
+>>> void main(int argc, char ** argv)
+>>> {
+>>> int rank;
+>>> int source, result, root;
+>>> MPI_Init(&argc, &argv);
+>>> MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+>>> root = 7;
+>>> source = rank + 1;
+>>> MPI_Reduce(&source, &result, 1, MPI_INT, MPI_PROD, root, MPI_COMM_WORLD);
+>>> if(rank == root) 
+>>> {
+>>>     printf("PE: %d MPI_PROD result is %d\n", rank, result);
+>>> }
+>>> MPI_Finalize();
+>>> }
