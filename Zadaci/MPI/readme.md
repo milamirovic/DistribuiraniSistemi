@@ -444,7 +444,7 @@ Grupne operacije dele se na:
 >> **operation** - operacija redukcije je definisana tim argumentom
 >> **rank** je identifikator root procesa
 
->> Operation može da ima sledeće vrednosti:
+>> **Operation** može da ima sledeće vrednosti:
 >> | Vrednost | Značenje |
 >> |--|--|
 >> | MPI_MAX | računanje maksimalne vrednosti od svih vrednosti u send_buff |
