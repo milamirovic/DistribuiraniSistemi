@@ -335,7 +335,7 @@ int MPI_Isend(void *buf, int count, MPI_Datatype dtype, int dest, int tag, MPI_C
 
 > promenljiva **request** je identifikator komunikacionog događaja. Na osnovu request se proverava (testira) status inicirane operacije ili kompletira njeno izvršenje. 
 
-> ***Program ne sme da modifikuje promenljivu buf nakon iniciranja operacije, sve dok MPI_Wait ili MPI_Test funkcija ne daju pozitivnu informaciju o kompletiranju operacije identifikovane na request. ***
+> Program ne sme da modifikuje promenljivu buf nakon iniciranja operacije, sve dok MPI_Wait ili MPI_Test funkcija ne daju pozitivnu informaciju o kompletiranju operacije identifikovane na request. 
 
 ## MPI_Irecv() funkcija
 
