@@ -765,4 +765,55 @@ void main(int argc, char** argv)
 
 3. Napisato MPI program koji izračunava vrednost broja PI kao vrednost integrala funkcije  f(x) = 4 / (1 + x^2) na intervalu [0,1].
 
-Interval funkcije od 0 do 1 podeljen je na N delova i što je veće N, to je veća preciznost. Svaki mali deo (pravougaonik) nazivamo segment i označavamo sa delta x. Širina segmenta označava se sa h i iznosi 1/N. Površina svakog pravouganika/segmenta nalazi se tako što se nađe vrednost funkcije F(xi) u tački xi na sredini tog pravougaonika/segmenta. Svaki proces će vršiti deo izračunavanja, računa površine određenih pravougaonika. Ceo integral se dobija zbirom svih površina pravougaonika. Procesu P0 dodeli se površina prvog pravougaonika, procesu P1 sledeći itd. Procesu P0 se opet dodeli neki pravougaonik, kada se na njega opet ciklično dođe na red.
+> ![enter image description here](https://i.imgur.com/Kkhzhl6.jpg)
+
+> Interval funkcije od 0 do 1 podeljen je na **N** delova i što je veće N, to je veća preciznost. Svaki mali deo (pravougaonik) nazivamo **segment** i označavamo sa **delta x**. Širina segmenta označava se sa **h** i iznosi 1/N. Površina svakog pravouganika/segmenta nalazi se tako što se nađe vrednost funkcije F(xi) u tački xi na sredini tog pravougaonika/segmenta. Svaki proces će vršiti deo izračunavanja, računa površine određenih pravougaonika. Ceo integral se dobija zbirom svih površina pravougaonika. Procesu P0 dodeli se površina prvog pravougaonika, procesu P1 sledeći itd. Procesu P0 se opet dodeli neki pravougaonik, kada se na njega opet ciklično dođe na red. U slučaju da imamo N=10, a da je broj procesa 5, onda svaki proces računa površinu za N/5 = 2 pravouganika.
+
+> ![enter image description here](https://i.imgur.com/NqN66MU.jpg)
+
+Pošto će svaki proces da računa po 2 površine, može se odrediti način da procesi to rade paralelno. P0 će nalaziti vrednost funkcije u tački x0 = 1/20 što je zapravo x0 = 0.5 * h. P0 će kasnije izračunavati površinu i za pravougaonik u intervalu 5/10 do 6/10, pa je x5 = 5,5 * h = 5,5 / 10. Od ćega zavisi u kojoj tački svaki proces računa prvo izračunavanje i sledeće izračunavanje? Zavisi od ranka i broja procesa. Sledeću tačku definiše broj procesa.
+
+Pa ako imamo **N - broj pravougaonika (segmenata)** i imamo **P - broj procesa**, pa logično je da će svaki proces da izračuna površine K = N/P pravougaonika (ako su deljivi N sa P). I onda za K = 0 imamo P0, P1, ... Pp procesa za prvih P pravougaonika, pa za K = 1 opet P0, P1, ... Pp za ostalih P pravougaonika itd. 
+
+```
+void main(int argc, char** argv)
+{
+      int N, rank, P, i; //N je broj pravougaonika, P je broj procesa 
+      double realPI = 3.14159;
+      double mypi, pi, h, fx, xi; // h je sirina segmenta tj. 1/N
+      
+      MPI_Init(&argc, &argv);
+      MPI_Comm_size(MPI_COMM_WORLD, &P);
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      
+      if(rank == 0)
+      {
+            printf("Unesi broj segmenata: ");
+            scanf("%d", &N);
+      }
+      
+      MPI_BCast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD); //svi procesi za promenljivu N treba da imaju tu vrednost
+      
+      h = (double) (1.0 / (double) N); // h = 1/N
+      fx = 0.0; // vrednost funkcije u tacki xi 
+      
+      for(i = rank;i < N;i += P)
+      {
+          xi = h * ((double)i + 0.5); // xi = h * (brPravougaonika + 0.5);
+          fx += 4.0 / (1.0 + xi * xi); //f(xi) += 4 / (1 + xi^2) ali za oba pravougaonika po procesu! Zato je += 
+          //za P0 bice fxi = 4/(1 + h*0.5*0.5) + 4/(1 + 5.5 * 5.5 * h)
+      }
+      mypi = h * fx; //povrsinaPravougaonika = h * f(xi)
+      
+      MPI_Reduce(&mypi, &pi, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+      //uzeti promenljive mypi svakog procesa i sabrati ih u promenljivu p procesa 0 
+      
+      if(rank == 0)
+      {
+           //ako je proces P0 onda on ima rezultat pi, pa moze da se stampa
+           printf("pi je oko %.16f, greska je %.16f", pi, fabs(pi - realPI));
+      }
+      
+      MPI_Finalize();
+}
+```
