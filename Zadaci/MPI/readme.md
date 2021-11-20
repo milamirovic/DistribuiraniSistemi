@@ -34,17 +34,17 @@ Svaki MPI program ima sledeću opštu strukturu:
 * zatvaranje svih MPI komunikacija
 >## MPI header
 >Sadrži prototipove MPI funkcija kao i definicije makroa, specijalnih konstanti i tipovi podataka korišćenih od strane MPI. Odgovarajuća #include direktiva mora postojati u bilo kom programu koji koristi MPI funkcije ili kontstante. 
->```javascript
+>```c
 >#include <mpi.h>
 >```
 >Inicijalizacija MPI okruženja obavlja se pozivom funkcije:
->```javascript
+>```c
 >MPI_Init(&argc, &argv)
 >```
 
 >## Zatvaranje svih MPI komunikacija 
 >Zatvaranje svih MPI komunikacija obavlja se pozivom funkcije:
->```javascript
+>```c
 >MPI_Finalize()
 >```
 >Posle poziva ove funkcije, ni jedan poziv bilo koje druge MPI funkcije ne može biti izveden. Ako svi procesi ne izvrše ovu funkciju, program se blokira. 
@@ -52,16 +52,16 @@ Svaki MPI program ima sledeću opštu strukturu:
 
 Imena svih MPI funkcija, konstanti, tipova počinju sa **MPI_**:
 ###  Imena funkcija imaju ovakav izgled:
-```
+```c
 MPI_ImeFunkcije(argumenti)
 ```
 >Svaka MPI funkcija vraća INT vrednost koja ukazuje na moguću grešku. Ako je povratna vrednost jednaka MPI_SUCCESS, onda nije došlo do greške, u suprotnom jeste. 
 ### Imena konstanti i osnovnih MPI tipova podataka sastoje se od velikih slova 
-```
+```c
 MPI_COMM_WORLD, MPI_INT, MPI_FLOAT, MPI_CHAR, ...
 ```
 ### Imena specijalnih MPI tipova
-```
+```c
 MPI_Comm, MPI_Datatype
 ```
 
@@ -101,14 +101,14 @@ U programu može biti definisano više komunikatora i jedan proces može biti č
 ![enter image description here](https://i.imgur.com/2jJgc2N.jpg)
  
 ### MPI_Comm_rank funkcija
-```
+```c
 int MPI_Comm_rank(MPI_Comm comm, int *rank)
 ```
 > Proces određuje svoj rank u komunikatoru korišćenjem MPI_Comm_rank funkcije
 > Isti proces može imati različite vrednosti za rank u različitim komunikatorima. 
 
 ### MPI_Comm_size funkcija
-```
+```c
 int MPI_Comm_size(MPI_Comm comm, int *size)
 ```
 > Proces može odrediti veličinu komunikatora kome pripada pomoću funkcije MPI_Comm_size
@@ -123,7 +123,7 @@ Komunikacija tipa: jedan proces šalje poruku, a drugi prima tu poruku. Point-to
 - podaci same poruke
 - oznaka poruke (message tag)
 - komunikator
-```
+```c
 int MPI_Send(void *buf, int count, MPI_Datatype dtype, int dest, int tag, MPI_Comm comm);
 ```
 > ***buf*** je mesto u memoriji odakle počinje slanje ***count*** podataka tipa ***dtype***. Broj podataka u MPI_Recv pozivu treba da bude veći ili jednak broju count u MPI_Send.
@@ -134,7 +134,7 @@ int MPI_Send(void *buf, int count, MPI_Datatype dtype, int dest, int tag, MPI_Co
 
 > ***comm*** je komunikator u okviru koga se odvija komunikacija
 
-```
+```c
 int MPI_Recv(void *buf, int count, MPI_Datatype dtype, int source, int tag, MPI_Comm comm, MPI_Status *status);
 ```
 > ***buf*** je mesto u memoriji od kojeg počinje poruka koja je primljena. 
@@ -177,7 +177,7 @@ Neka proces P1 ima MPI_Recv(od P0) i MPI_Send(ka procesu P0).
 Šta će da se desi? Pa upareni su MPI_Recv i MPI_Send procesa P0 i P1, kao i MPI_Send i MPI_Recv procesa P1. Javlja se uzajamno blokiranje.
 
 # Point-to-point komunikacija BEZ deadlock-a (uzajamnog isključivanja)
-```
+```c
 #include <stdio.h>
 #include <mpi.h>
 
@@ -217,7 +217,7 @@ U procesu P0 stalno se učitavaju vrednosti u promenljivu **value** i ta se vred
 U procesu P1, primi se poruka od prethodnog procesa sa MPI_Recv i prosledi taj podatak sledećem. I tako se radi sve do poslednjeg priocesa koji samo prima poruku od prethodnog procesa. 
 Vrednosti se učitavaju u P0 sve dok je vrednost veća ili jednaka od 0. 
 
-```
+```c
 #include "mpi.h"
 #include <stdio.h>
 
@@ -272,7 +272,7 @@ P1 prima value od P0 i šalje novi value procesu P2
 Svi procesi na dalje rade isto što i P1, primaju od prethodnog i novu vrednost šaju sledećem
 Poslednji samo prima vrednost i kreira novu vrednost, koju nigde ne šalje. 
 
-```
+```c
 #include <stdio.h>
 #include "mpi.h"
 
@@ -317,7 +317,7 @@ MPI podržava komunikaciju bez blokiranja, u kome jedan proces može započeti o
 
 ## MPI_Isend() funkcija
 Iz funkcije MPI_Isend() proces se vraća odmah, pre nego što poruka bude iskopirana u bafer. Sintaksa funkcije za slanje bez blokiranja je:
-```
+```c
 int MPI_Isend(void *buf, int count, MPI_Datatype dtype, int dest, int tag, MPI_Comm comm, MPI_Request *request)
 ```
 
@@ -341,7 +341,7 @@ int MPI_Isend(void *buf, int count, MPI_Datatype dtype, int dest, int tag, MPI_C
 
 Proces vrši prijem bez blokiranja, tj. inicira prijem pomoću funkcije:
 
-```
+```c
 int MPI_Irecv(void *buf, int count, MPI_Datatype dtype, int source, int tag, MPI_Comm comm, MPI_Request *request);
 ```
 
@@ -364,7 +364,7 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype dtype, int source, int tag, MPI
 ## MPI_Wait() funkcija 
 
 Funkcija koja se koristi za proveru kompletiranja operacija bez blokiranja je:
-```
+```c
 int MPI_Wait(MPI_Request * request, MPI_Status *status)
 ```
 > Proces se iz ove funkcije vraća onda kada se operacija identifikovana sa **request** izvrši. Ako je inicirana operacija *MPI_Irecv()*, onda ***MPI_Status status*** čuva informaciju o izvoru poruke, oznaci poruke - tag, kao i broju primljenih podataka. U slučaju *MPI_Isend()*, status čuva informaciju o grešci. Ova operacija je blokirajuća. 
@@ -373,7 +373,7 @@ int MPI_Wait(MPI_Request * request, MPI_Status *status)
 
 Funkcija MPI_Test vraća informaciju o trenutnom stanju operacije koja je identifikovana argumentom request:
 
-```
+```c
 int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status);
 ```
 
@@ -381,7 +381,7 @@ Argument **flag** je ***true*** ako je operacija završenja, u suprotnom je ***f
 
 ### Primer
 
-```
+```c
 #include <stdio.h>
 #include <mpi.h>
 
@@ -424,7 +424,7 @@ Grupne operacije dele se na:
 
 ## Grupne operacije za kontrolu procesa 
 > ### MPI_Barrier funkcija
-> ```
+> ```c
 > int MPI_Barrier (MPI_Comm comm);
 > ```
 >> **Funkcija MPI_Barrier implementira sinhronizacioni mehanizam poznat kao *barijera*. Proces se blokira na toj naredbi dok svi ostali procesi iz grupe ne dođu do te naredbe. Tada se svi procesi vraćaju daljem izvršenju.**
@@ -433,7 +433,7 @@ Grupne operacije dele se na:
  ## Operacije za globalna izračunavanja
  Ovde spadaju *operacije za redukciju podataka* i *operacija scan*. Operacija redukcije uzima podatke u ulaznim baferima svih procesa, primenjuje nad njima datu operaciju redukcije i smešta rezultat u root procesa. 
 > ### MPI_Reduce funkcija
-> ```
+> ```c
 > int MPI_Reduce(void * send_buffer, void * recv_buffer, int count, MPI_Datatype dtype, MPI_Op operation, int rank, MPI_Comm comm);
 > ```
 >> **send_buffer** je adresa bafera svih procesa gde se nalaze podaci nad kojima se obavlja operacija redukcije. Svaki proces će da ima u grupi svoj send_buffer. Reduce operacija će uzeti podatke u ulaznim baferima svih procesa i nad njima vrši redukciju pomoću operacije operation. 
@@ -461,7 +461,7 @@ Grupne operacije dele se na:
 >> | MPI_MAXLOC | pored računanja max vrednosti, daje i rank procesa koji ima tu vrednost |
 
 >>> ***Primer Reduce funkcije kada je source jedna vrednost (count=1)***
->>> ```
+>>> ```c
 >>> #include <stdio.h>
 >>> #include <mpi.h>
 >>> void main(int argc, char ** argv)
@@ -492,7 +492,7 @@ Grupne operacije dele se na:
 >>> ***Primer Reduce funkcije kada je source niz više vrednosti (count>1)***
 >>>  ![enter image description here](https://i.imgur.com/napJfaA.jpg)
 >>>  Dat je niz od 2 elementa, svaki proces ima svoj niz. Nulti proces ima niz [5, 1], prvi [2, 3], ... Rezultat (ako se koristi MPI_SUM operacija) bi bio ponovo niz od 2 elementa [18, 14]. Broj elemenata niza nije bitan, može biti proizvoljan, bitan je način računanja sume po elementima niza tj. sama reduce funkcija. 
->>> ```
+>>> ```c
 >>> #include <stdio.h>
 >>> #include <mpi.h>
 >>> void main(int argc, char ** argv)
@@ -517,12 +517,12 @@ Grupne operacije dele se na:
 
 > ### MPI_Scan funkcija
 > **Ova funkcija se još zove i *prefix reduce operacija*. Funkcija vraća u receive bafer procesa sa rankom *i* redukciju vrednosti u send baferima sa rangovima *0, 1, ... i*.**
-> ```
+> ```c
 > int MPI_Scan(void* send_buffer, void* recv_buffer, int count, MPI_Dataype dtype, MPI_Op operation, MPI_Comm comm);
 > ```
 > Razlike u odnosu na MPI_Reduce su: 
 > * Nema rank-a procesa u cijem ce recv_buffer-u da se pamti rezultat, jer se zna da rank ima vrednost i
-> ```
+> ```c
 > #include <stdio.h>
 > #include <mpi.h>
 > void main(int argc, char** argv[])
@@ -550,14 +550,14 @@ Osnovne operacije za prenos podataka su:
 
 > ### **MPI_Bcast funkcija**
 > Omogućava kopiranje podataka iz memorije root procesa u mesta u memoriji ostalih procesa. Root proces je argument MPI_Bcast funkcije. FUnkciju MPI_Bcast moraju da pozovu svi procesi koji pripadaju datom komunikatoru comm. 
-> ```
+> ```c
 > int MPI_Bcast(void* buffer, int count, MPI_Datatype dtype, int rank, MPI_Comm comm);
 > ```
 > Od adrese buffer procesa sa rankom rank, šalje se count podataka tipa dtype svim procesima u okviru komunikatora comm. To je dejstvo ove funkcije. 
 > ![enter image description here](https://i.imgur.com/pG3qeVQ.jpg)
 > Neka je A skup podataka koji se šalje iz root procesa (root proces ima rank 0). Kada se uradi MPI_Bcast ono šro se događa je da svaki ostali proces u tom komunikatoru dobija isti taj skup podataka A. 
 >> Primer.
->> ```
+>> ```c
 >> #include <stdio.h>
 >> #include <mpi.h>
 >> void main(int argc, char** argv)
@@ -580,7 +580,7 @@ Osnovne operacije za prenos podataka su:
 >> Rezultat će biti da svaki proces štampa 23 jer će svi to dobiti preko bcast-a. Tačnije, svaki proces će za svoju promenljivu param imati vrednost 23. 
 > ### **MPI_Scatter funkcija**
 > Omogućava da i-ti segment bafera root procesa bude poslat i-tom procesu u grupi gde su svi segmenti iste veličine. 
-> ```
+> ```c
 > int MPI_Scatter(void* send_buffer, int send_count, MPI_Datatype send_type, void* recv_buffer, int recv_count, MPI_Datatype recv_type, int rank, MPI_Comm comm)
 > ```
 > Praktično se u okviru send_buffer-a procesa čiji je rank dat nalaze podaci i prilikom izvršenja ove funkcije se svakom procesu (i proces sa datim rankom rank) šalje po send_count podataka tipa send_type. Svaki proces dobija isti broj podataka tog tipa u svoj recv_buffer. 
@@ -594,7 +594,7 @@ Osnovne operacije za prenos podataka su:
 > ![enter image description here](https://i.imgur.com/PaBPZez.jpg)
 > Ako je root proces P0 koji ima niz podataka koji su podeljeni u grupe (sve iste veličine) označene sa A, B, C i D, ono što će svi procesi komunikatora (od P0 do poslednjeg procesa) dobiti su pojedinačni segmenti koji su iste veličine. 
 >> Primer.
->> ```
+>> ```c
 >> void main(int argc, char** argv)
 >> {
 >>      int rank, size, i; //dat je rank procesa, velicina komunikatora (broj procesa)
@@ -636,13 +636,13 @@ Osnovne operacije za prenos podataka su:
 > ### **MPI_Gather funkcija**
 > [SUPROTNO OD MPI_Scatter!!!!]
 > Omogućava da jedan proces formira sadržaj svog bafera kao skup podataka prikupljenih od ostalih procesa u datoj grupi. Tako je i-ti element tog bafera preuzet od i-tog procesa. 
-> ```
+> ```c
 > int MPI_Gather(void* send_buffer, int send_count, MPI_Datatype send_type, void* recv_buffer, int recv_count, MPI_Datatype recv_type, int rank, MPI_Comm comm)
 > ```
 > Proces prima podatke i skladišti ih na osnovu identifikatora procesa (ranka) u toj grupi. Podaci iz send_buffer-a prvog člana grupe biće iskopirani u prvih recv_count lokacija bafera recv_buffer, podaci iz send_buffer-a drugog procesa u grupi biće iskopirani u sledećih recv_vount lokacija i tako redom.
 > ![enter image description here](https://i.imgur.com/gkWdLv0.jpg)
 >> Primer.
->> ```
+>> ```c
 >> void main(int argc, char** argv)
 >> {
 >>     int rank, size;
@@ -686,7 +686,7 @@ Osnovne operacije za prenos podataka su:
 
 _Kada se traži min i max, zajedno sa rankom procesa, koristi se Reduce sa MPI_MAXLOC/MPI_MINLOC koji daje id procesa koji sadrži max/min vrednost. U tom slučaju ulazni i izlazni podatak Reduce funkcije mora biti STRUKTURA! Da se ne traži i rank procesa, moglo bi bez strukture pomoću MPI_MAX/MPI_MIN. Tada se ne koristi MPI_DOUBLE_INT nego samo MPI_DOUBLE ili MPI_INT.
 _
-```
+```c
 #include <mpi.h>
 void main(int argc, char** argv)
 {
@@ -731,7 +731,7 @@ void main(int argc, char** argv)
 
 > U suštini, imamo niz in[30] i out[30], koji su tipa strukture MPI_INT_DOUBLE. To znači da svaki element niza in ima value i rank deo. Takođe, svaki proces ima posebnu vrednost za svaki svoj element niza in, kao na slici. 
 
-```
+```c
 #include <stdion.h>
 #include <mpi.h>
 void main(int argc, char** argv)
