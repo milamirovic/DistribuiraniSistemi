@@ -422,7 +422,7 @@ Grupne operacije dele se na:
 * **operacije za globalna izračunavanja**
 * **operacija za prenos podataka**
 
-## Operacije za kontrolu procesa 
+## Grupne operacije za kontrolu procesa 
 > ### MPI_Barrier funkcija
 > ```
 > int MPI_Barrier (MPI_Comm comm);
@@ -541,7 +541,7 @@ Grupne operacije dele se na:
 > ```
 > Ako imamo 4 procesa, source za svaki proces redom ce biti 1, 2, 3 i 4. Rezultat u tom slučaju je: PE 3 SUM 10, PE 1 SUM 3, PE 0 SUM 1, PE 2 SUM 6 (ne mora da se izvršava redom od procesa 0 do 3, već može i ovako)
 
-## Operacije za prenos podataka
+## Grupne operacije za prenos podataka
  
 Osnovne operacije za prenos podataka su:
 * **MPI_Bcast** ili broadcast funkcija, 
@@ -626,12 +626,12 @@ Osnovne operacije za prenos podataka su:
 >>  }
 >>  ```
 >>  Rezultat izvršenja ove funkcije je:
->>  P: 0 mine is 23.0
->>  P: 1 mine is 24.0
->>  P: 2 mine is 25.0
->>  P: 3 mine is 26.0
->>  ...
->>  P: 7 mine is 30.0
+>>  * P: 0 mine is 23.0
+>>  * P: 1 mine is 24.0
+>>  * P: 2 mine is 25.0
+>>  * P: 3 mine is 26.0
+>>  * ...
+>>  * P: 7 mine is 30.0
 
 > ### **MPI_Gather funkcija**
 > [SUPROTNO OD MPI_Scatter!!!!]
@@ -678,6 +678,91 @@ Osnovne operacije za prenos podataka su:
 >> Izlaz za 10 procesa imaće sledeći izgled:
 >> * PE: 7 param[0] = 23
 >> * PE: 7 param[1] = 24
->> ...
+>> * ...
 >> * PE: 7 param[9] = 32
 
+# Grupne operacije - ZADACI
+1. Napisati MPI program koji nalazi **_minimalnu_** i **_maximalnu_** vrednost zadate promenljive za N procesa kao i identifikatore procesa koji sadrže te vrednosti. 
+
+_Kada se traži min i max, zajedno sa rankom procesa, koristi se Reduce sa MPI_MAXLOC/MPI_MINLOC koji daje id procesa koji sadrži max/min vrednost. U tom slučaju ulazni i izlazni podatak Reduce funkcije mora biti STRUKTURA! Da se ne traži i rank procesa, moglo bi bez strukture pomoću MPI_MAX/MPI_MIN. Tada se ne koristi MPI_DOUBLE_INT nego samo MPI_DOUBLE ili MPI_INT.
+_
+```
+#include <mpi.h>
+void main(int argc, char** argv)
+{
+      int rank;
+      struct { double value; int rank; }  in, out; //in je send buffer, out je recv buffer
+      int root;
+      MPI_Init(&argv, &argv);
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      
+      in.value = rank + 1;
+      in.rank = rank;
+      
+      root = 5;
+      
+      MPI_Reduce(&in, &out, 1, MPI_DOUBLE_INT, MPI_MAXLOC, root, MPI_COMM_WORLD);
+      //MPI_MAXLOC izvrsava se nad promenljivama in (koje su tipa MPI_DOUBLE_INT) svakog procesa
+      //MPI_MAXLOC se moze izvrsavati SAMO NAD STRUKTURAMA PODATAKA, NE NAD STANDARDNIM TIPOVIMA PODATAKA
+      //max vrednost svih in.value vrednosti je 7, a in.rank je tada 6
+      //ova vrednost in bice zabelezena u procesu ciji je rang jednak root i to u promenljivoj out 
+      //dakle u promenljivoj out procesa 5 bice zapamceno { value = 7, rank = 6 }
+      if(rank == root)
+      {
+           printf("PE: %d min=%lf at rank %d\n", rank, out.value, out.rank);
+      }
+      
+      MPI_Reduce(&in, &out, 1, MPI_DOUBLE_INT, MPI_MINLOC, root, MPI_COMM_WORLD);
+      
+      if(rank == root)
+      {
+           printf("PE: %d min=%lf at rank %d\n", rank, out.value, out.rank);
+      }
+      
+      MPI_Finalize();
+}
+```
+
+**_MPI_DOUBLE_INT_** je tip strukture koja ima 2 elementa tipa **INT** i **DOUBLE**. Postoji i **_MPI_FLOAT_INT_**, **_MPI_DOUBLE_INT_** i **_MPI_2INT_**. 
+
+2. Svaki od N procesa sadrži 30 realnih brojeva. Napisati MPI program koji nalazi **max vrednost** na svakoj od 30 lokacija, kao i identifikator procesa koji sadrži tu vrednost. 
+
+> ![enter image description here](https://i.imgur.com/gkWdLv0.jpg)
+
+> U suštini, imamo niz in[30] i out[30], koji su tipa strukture MPI_INT_DOUBLE. To znači da svaki element niza in ima value i rank deo. Takođe, svaki proces ima posebnu vrednost za svaki svoj element niza in, kao na slici. 
+
+```
+#include <stdion.h>
+#include <mpi.h>
+void main(int argc, char** argv)
+{
+     struct { double value; int rank; } in[30], out[30];
+     int i, rank, size, send_count;
+     //root je proces 0
+     MPI_Init(&argc, &argv);
+     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+     MPI_Comm_size(MPI_COMM_WORLD, &size);
+     
+     for(i = 0; i < 30; i++)
+     {
+         in[i].value = double(rank + i);
+         in[i].rank = rank;
+     }
+     
+     MPI_Reduce(in, out, 30, MPI_DOUBLE_INT, MPI_MAXLOC, 0, MPI_COMM_WORLD);
+     
+     if(rank == 0)
+     {
+         for(i = 0; i < 30; i++)
+         {
+              printf("outvalue = %f", out[i].value);
+              printf("outrank = %d", out[i].rank);
+         }
+     }
+     MPI_Finalize();
+}
+```
+
+3. Napisato MPI program koji izračunava vrednost broja PI kao vrednost integrala funkcije  f(x) = 4 / (1 + x^2) na intervalu [0,1].
+
+Interval funkcije od 0 do 1 podeljen je na N delova i što je veće N, to je veća preciznost. Svaki mali deo (pravougaonik) nazivamo segment i označavamo sa delta x. Širina segmenta označava se sa h i iznosi 1/N. Površina svakog pravouganika/segmenta nalazi se tako što se nađe vrednost funkcije F(xi) u tački xi na sredini tog pravougaonika/segmenta. Svaki proces će vršiti deo izračunavanja, računa površine određenih pravougaonika. Ceo integral se dobija zbirom svih površina pravougaonika. Procesu P0 dodeli se površina prvog pravougaonika, procesu P1 sledeći itd. Procesu P0 se opet dodeli neki pravougaonik, kada se na njega opet ciklično dođe na red.
