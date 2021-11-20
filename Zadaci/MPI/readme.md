@@ -676,8 +676,8 @@ Osnovne operacije za prenos podataka su:
 >> }
 >> ```
 >> Izlaz za 10 procesa imaće sledeći izgled:
->> PE: 7 param[0] = 23
->> PE: 7 param[1] = 24
+>> * PE: 7 param[0] = 23
+>> * PE: 7 param[1] = 24
 >> ...
->> PE: 7 param[9] = 32
+>> * PE: 7 param[9] = 32
 
