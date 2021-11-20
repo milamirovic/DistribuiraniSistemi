@@ -775,7 +775,7 @@ Pošto će svaki proces da računa po 2 površine, može se odrediti način da p
 
 Pa ako imamo **N - broj pravougaonika (segmenata)** i imamo **P - broj procesa**, pa logično je da će svaki proces da izračuna površine K = N/P pravougaonika (ako su deljivi N sa P). I onda za K = 0 imamo P0, P1, ... Pp procesa za prvih P pravougaonika, pa za K = 1 opet P0, P1, ... Pp za ostalih P pravougaonika itd. 
 
-```
+```c
 void main(int argc, char** argv)
 {
       int N, rank, P, i; //N je broj pravougaonika, P je broj procesa 
