@@ -489,3 +489,195 @@ Grupne operacije dele se na:
 >>> }
 >>> ```
 >>> 
+>>> ***Primer Reduce funkcije kada je source niz više vrednosti (count>1)***
+>>>  ![enter image description here](https://i.imgur.com/napJfaA.jpg)
+>>>  Dat je niz od 2 elementa, svaki proces ima svoj niz. Nulti proces ima niz [5, 1], prvi [2, 3], ... Rezultat (ako se koristi MPI_SUM operacija) bi bio ponovo niz od 2 elementa [18, 14]. Broj elemenata niza nije bitan, može biti proizvoljan, bitan je način računanja sume po elementima niza tj. sama reduce funkcija. 
+>>> ```
+>>> #include <stdio.h>
+>>> #include <mpi.h>
+>>> void main(int argc, char ** argv)
+>>> {
+>>>     int rank;
+>>>     int source, result, root, n, a, b;
+>>>     n = 2;//broj elemenata niza
+>>>     MPI_Init(&argc, &argv); //inicijalizacija programa
+>>>     MPI_Comm_rank(MPI_COMM_WORLD, &rank); //svaki proces dobija svoj rank
+>>>     root = 7; //root moze da bude bilo koji broj od aktivnih procesa
+>>>     source = rank + 1; //source ovako postaje za broj veci od trenutnog id-a procesa
+>>>     
+>>>     MPI_Reduce(a, b, n, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD);
+>>>     
+>>>     if(rank == root) 
+>>>     {
+>>>          printf("PE: %d MPI_PROD result is %d\n", rank, result);
+>>>     }
+>>>     MPI_Finalize();
+>>> }
+>>> ```
+
+> ### MPI_Scan funkcija
+> **Ova funkcija se još zove i *prefix reduce operacija*. Funkcija vraća u receive bafer procesa sa rankom *i* redukciju vrednosti u send baferima sa rangovima *0, 1, ... i*.**
+> ```
+> int MPI_Scan(void* send_buffer, void* recv_buffer, int count, MPI_Dataype dtype, MPI_Op operation, MPI_Comm comm);
+> ```
+> Razlike u odnosu na MPI_Reduce su: 
+> * Nema rank-a procesa u cijem ce recv_buffer-u da se pamti rezultat, jer se zna da rank ima vrednost i
+> ```
+> #include <stdio.h>
+> #include <mpi.h>
+> void main(int argc, char** argv[])
+> {
+>     int rank;
+>     int source, result;
+>     MPI_Init(&argc, &argv);
+>     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+>     source = rank + 1;
+>     
+>     MPI_Scan(&source, &result, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+>     
+>     printf("PE %d SUM %d \n", rank, result);
+>     MPI_Finalize();
+> }
+> ```
+> Ako imamo 4 procesa, source za svaki proces redom ce biti 1, 2, 3 i 4. Rezultat u tom slučaju je: PE 3 SUM 10, PE 1 SUM 3, PE 0 SUM 1, PE 2 SUM 6 (ne mora da se izvršava redom od procesa 0 do 3, već može i ovako)
+
+## Operacije za prenos podataka
+ 
+Osnovne operacije za prenos podataka su:
+* **MPI_Bcast** ili broadcast funkcija, 
+* **MPI_Scatter** i 
+* **MPI_Gather**.
+
+> ### **MPI_Bcast funkcija**
+> Omogućava kopiranje podataka iz memorije root procesa u mesta u memoriji ostalih procesa. Root proces je argument MPI_Bcast funkcije. FUnkciju MPI_Bcast moraju da pozovu svi procesi koji pripadaju datom komunikatoru comm. 
+> ```
+> int MPI_Bcast(void* buffer, int count, MPI_Datatype dtype, int rank, MPI_Comm comm);
+> ```
+> Od adrese buffer procesa sa rankom rank, šalje se count podataka tipa dtype svim procesima u okviru komunikatora comm. To je dejstvo ove funkcije. 
+> ![enter image description here](https://i.imgur.com/pG3qeVQ.jpg)
+> Neka je A skup podataka koji se šalje iz root procesa (root proces ima rank 0). Kada se uradi MPI_Bcast ono šro se događa je da svaki ostali proces u tom komunikatoru dobija isti taj skup podataka A. 
+>> Primer.
+>> ```
+>> #include <stdio.h>
+>> #include <mpi.h>
+>> void main(int argc, char** argv)
+>> {
+>>       int rank;
+>>       int root = 5;
+>>       double param; //promenljiva koja će dobiti vrednost u svakom procesu pomoću bcast-a
+>>       MPI_Init(&argc, &argv);
+>>       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+>>       if(rank == root)
+>>       {
+>>          param = 23.0;
+>>       }
+>>       MPI_Bcast(&param, 1, MPI_DOUBLE, 5, MPI_COMM_WORLD);
+>>       //od adrese param-a šalje se 1 podatak tipa MPI_DOUBLE (jer je param dobule) iz procesa 5, svim procesima u komunikatoru MPI_COMM_WORLD
+>>       printf("Process: %d after bradcast parameter is %f\n", rank, param);
+>>       MPI_Finalize();
+>> }
+>> ```
+>> Rezultat će biti da svaki proces štampa 23 jer će svi to dobiti preko bcast-a. Tačnije, svaki proces će za svoju promenljivu param imati vrednost 23. 
+> ### **MPI_Scatter funkcija**
+> Omogućava da i-ti segment bafera root procesa bude poslat i-tom procesu u grupi gde su svi segmenti iste veličine. 
+> ```
+> int MPI_Scatter(void* send_buffer, int send_count, MPI_Datatype send_type, void* recv_buffer, int recv_count, MPI_Datatype recv_type, int rank, MPI_Comm comm)
+> ```
+> Praktično se u okviru send_buffer-a procesa čiji je rank dat nalaze podaci i prilikom izvršenja ove funkcije se svakom procesu (i proces sa datim rankom rank) šalje po send_count podataka tipa send_type. Svaki proces dobija isti broj podataka tog tipa u svoj recv_buffer. 
+> * **send_buffer** je adresa bafera root procesa odakle počinje slanje podataka
+> * **send_count** je broj podataka koji se šalje svakom procesu (broj podataka u segmentu)
+> * **send_type** je tip podataka koji se šalju
+> * **recv_buffer** je adresa prijemnog bafera
+> * **recv_count** je broj podataka koji se primaju u recv_buffer
+> * **recv_type** tip podataka u prijemnom baferu
+> * **rank** je id root procesa koji šalje poruke (podatke)
+> ![enter image description here](https://i.imgur.com/PaBPZez.jpg)
+> Ako je root proces P0 koji ima niz podataka koji su podeljeni u grupe (sve iste veličine) označene sa A, B, C i D, ono što će svi procesi komunikatora (od P0 do poslednjeg procesa) dobiti su pojedinačni segmenti koji su iste veličine. 
+>> Primer.
+>> ```
+>> void main(int argc, char** argv)
+>> {
+>>      int rank, size, i; //dat je rank procesa, velicina komunikatora (broj procesa)
+>>      double param[8], mine; 
+>>      //param[8] je zapravo send bafer od 8 elemenata 
+>>      //ako imamo 8 procesa, svaki proces ce da primi po 1 element niza param[8] 
+>>      //i primice ga u svoju promenljivu mine
+>>      int send_count, recv_count; 
+>>      //send_count je broj podataka koji se salju svakom prosecu
+>>      //recv_count je broj podataka koji se primaju u recv_buffer
+>>      send_count = 1; //svakom procesu salje se po 1 element niza param
+>>      recv_count = 1; //svaki prices dobice po 1 element
+>>      MPI_Init(&argc, &argv);
+>>      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+>>      MPI_Comm_size(MPI_COMM_WORLD, &size);
+>>      //proces sa rankom 3 je root, pa u njemu inicijalizujemo niz param[8]
+>>      if(rank == 3)
+>>      {
+>>          for(i = 0; i<8; i++)
+>>          {
+>>              param[i] = 23 + i;
+>>          }
+>>      }
+>>      MPI_Scatter(param, send_count, MPI_DOUBLE, &mine, recv_count, MPI_DOUBLE, 3, MPI_COMM_WORLD);
+>>      //slanje pocinje od pocetka niza param, salje se po 1 element tipa MPI_DOUBLE i cuva se u promenljoj mine 
+>>      //svakog procesa koji primi podatak, a mine je velicine 1 element tipa MPI_DOUBLE. Root proces je 3. 
+>>      printf("P: %d, mine is %f\n", rank, mine);
+>>      MPI_Finalize();
+>>  }
+>>  ```
+>>  Rezultat izvršenja ove funkcije je:
+>>  P: 0 mine is 23.0
+>>  P: 1 mine is 24.0
+>>  P: 2 mine is 25.0
+>>  P: 3 mine is 26.0
+>>  ...
+>>  P: 7 mine is 30.0
+
+> ### **MPI_Gather funkcija**
+> [SUPROTNO OD MPI_Scatter!!!!]
+> Omogućava da jedan proces formira sadržaj svog bafera kao skup podataka prikupljenih od ostalih procesa u datoj grupi. Tako je i-ti element tog bafera preuzet od i-tog procesa. 
+> ```
+> int MPI_Gather(void* send_buffer, int send_count, MPI_Datatype send_type, void* recv_buffer, int recv_count, MPI_Datatype recv_type, int rank, MPI_Comm comm)
+> ```
+> Proces prima podatke i skladišti ih na osnovu identifikatora procesa (ranka) u toj grupi. Podaci iz send_buffer-a prvog člana grupe biće iskopirani u prvih recv_count lokacija bafera recv_buffer, podaci iz send_buffer-a drugog procesa u grupi biće iskopirani u sledećih recv_vount lokacija i tako redom.
+> ![enter image description here](https://i.imgur.com/gkWdLv0.jpg)
+>> Primer.
+>> ```
+>> void main(int argc, char** argv)
+>> {
+>>     int rank, size;
+>>     double param[16], mine; 
+>>     //sada se podaci dobijaju u param, a mine je inicijalizovan za svaki proces i salje se
+>>     int send_count, recv_count;
+>>     int i;
+>>     MPI_Init(&argc, &argv);
+>>     MPI_Comm_rank(MPI_COMM_WORLS, &rank);
+>>     MPI_Comm_size(MPI_COMM_WORLD, &size);
+>>     send_count = 1; //svaki proces salje po 1 element iz svog send_buffer-a
+>>     mine = 23 + rank;
+>>     if(rank == 7) //7 je root proces
+>>     {
+>>         recv_count = 1; //prima se po 1 element od svakog procesa 
+>>     }
+>>     
+>>     MPI_Gather(&mine, send_count, MPI_DOUBLE, param, recv_count, MPI_DOUBLE, 7, MPI_COMM_WORLD);
+>>     // iz promenljive mine svakog procesa uzima se po 1 element tipa MPI_DOUBLE 
+>>     // i redjaju se redom (promenljiva mine procesa P0, pa procesa P1, itd)u promenljivu param procesa P7 
+>>     // mine procesa P0 -> P7: param[0]
+>>     // mine procesa P1 -> P7: param[1]
+>>     // mine procesa P2 -> P7: param[2]
+>>     // param se generise kao skup mine iz svih procesa
+>>     if(rank == 7)
+>>     {
+>>         for(i = 0; i<size; i++)
+>>             printf("PE: %d, param[%d] is %f \n", rank, i, param);
+>>     }
+>>     MPI_Finalize();
+>> }
+>> ```
+>> Izlaz za 10 procesa imaće sledeći izgled:
+>> PE: 7 param[0] = 23
+>> PE: 7 param[1] = 24
+>> ...
+>> PE: 7 param[9] = 32
+
