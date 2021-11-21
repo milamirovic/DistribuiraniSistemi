@@ -1,4 +1,4 @@
 # Tekst zadatka:
 Napisati MPI program koji izračunava i prikazuje proizvod matrice **Anxk** i vektora **bkx** i generiše vektor c. Matrica A i vektor b se inicijalizuju u master procesu. Izračunavanje se obavlja tako što master proces šalje svakom procesu po 1 kolonu matrice A i po jedan element vektora b. Svi elementi jedne kolone matrice A se šalju odjednom. Svi procesi učestvuju u izračunavanjima potrebnim za generisanje rezultata programa. Nakon slanja elemenata matrice A, u okviru programa se izračunava i prikazuje minimum vrednosti elemenata matrice A, kao i proizvod elemenata svake vrste matrice A. Program treba da obezbedi da se rezultati programa nalaze i prikazuju u procesu koji nakon slanja elemenata matrice A sadi minimum svih vrednosti u matrici A. Zadatak rešiti:
-a) korišćenjem grupnih operacija, osim za slanje kolona matrice A
-b) korišćenjem Point-to-point operacija
+* korišćenjem grupnih operacija, osim za slanje kolona matrice A
+* korišćenjem Point-to-point operacija
