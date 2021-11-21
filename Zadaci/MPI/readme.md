@@ -817,3 +817,256 @@ void main(int argc, char** argv)
       MPI_Finalize();
 }
 ```
+4. Napisati MPI program koji izračunava vrednot skalarnog proizvoda dva vektora dimenzije N. Pretpostaviti da je N deljivo sa brojem procesa P. Vrednosti vektora a i b se učitavaju u procesu P0. 
+
+```c
+#include <mpi.h>
+#include <stdio.h>
+#define N 6
+
+void main(int argc, char** argv)
+{
+       float a[N], b[N], dot, local_dot = 0;
+       int i, n_bar, my_rank, P;
+       
+       MPI_Init(&argc, &argv);
+       MPI_Comm_size(MPI_COMM_WORLD, &p);
+       MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+       
+       n_bar = N / P; //koliko pravougaonika ce svaki proces obraditi
+       //pravougaonik ce biti deo vektora A i deo vektora B
+       
+       float* local_a = (float*)malloc(n_bar * sizeof(float));
+       //svaki proces ima local_a niz u kome se nalaze elementi niza a za taj proces, dakle N/P ih ima u tom nizu
+       float* local_b = (float*)malloc(n_bar * sizeof(float));
+       
+       if(my_rank == 0)
+       {
+            for(i = 0; i < N; i++)
+            {
+                //ucitaj niz a u procesu P0
+                scanf("%f", &a[i]);
+            }
+       }
+       
+       MPI_Scatter(a, n_bar, MPI_FLOAT, local_a, n_bar, MPI_FLOAT, 0, MPI_COMM_WORLD);
+       //na ovaj nacin proces P0 iz niza a n_bar elemenata tipa MPI_FLOAT prosledjuje ostalim procesima (a i sebi)
+       //tj. njihovim local_a nizovima, koji pamti elemente tipa MPI_FLOAT
+       
+       if(my_rank == 0)
+       {
+            for(i = 0; i < n; i++)
+            {
+                 //ucitaj niz b u procesu P0
+                 scanf("%f", &b[i]);
+            }
+       }
+       
+       MPI_Scatter(b, n_bar, MPI_FLOAT, local_b, n_bar, MPI_FLOAT, 0, MPI_COMM_WORLD);
+       //na ovaj nacin proces P0 iz niza b n_bar elemenata tipa MPI_FLOAT prosledjuje ostalim procesima 
+       //tj. njihovim local_b nizovima, koji pamti elemente tipa MPI_FLOAT
+       
+       for(i = 0; i < n_bar; i++)
+             local_dot += local_a[i] * local_b[i];
+       
+       MPI_Reduce(&local_dot, &dot, 1, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+       
+       if(my_rank == 0)
+             printf("The dot producet is %f\n", dot);
+       
+       MPI_Finalize();
+}
+```
+
+5. Napisati MPI program koji pronalazi **proizvod** _matrice Anxn_ i _vektora bn_. Matrica A i vektor b se inicijalizuju u procesu 0. Izračunavanje se obavlja tako što se svakom procesu distribuira po vrsta matrice A i ceo vektor b. Svi procesi učestvuju u izračunavanju. Rezultat se prikazuje u procesu 0. 
+
+> ![enter image description here](https://i.imgur.com/8aCbXIa.jpg)
+
+```c
+#include <stdio.h>
+#include <mpi.h>
+#define N 6
+
+void main(int argc, char** argv)
+{
+      int rank, P, i, j, a[N][N], b[N], local_a[N], local_c, c[N];
+      
+      MPI_Init(&argc, &argv);
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Comm_size(MPI_COMM_WORLD, &P);
+      
+      if(rank == 0)
+      {
+           //u procesu P0 se inicijalizuje a i b
+           for(i = 0; i < N; i++)
+           {
+                 for(j = 0; j < N; j++)
+                 {
+                      a[i][j] = i + j;
+                 }
+                 
+                 b[i] = 1;
+           }
+      }
+      
+      //svaki proces prima jednu vrstu matrice A:
+      MPI_Scatter(&a[0][0], N, MPI_INT, local_a, N, MPI_INT, 0, MPI_COMM_WORLD);
+      //proces P0 od pocetka matrice a salje N podataka tipa MPI_INT ka svim ostalim procesima ukljucujuci i P0
+      //i ti podaci smestaju se u promenljivu local_a svakog procesa koja prima N podataka tipa MPI_INT 
+      
+      //svaki proces prima ceo niz B:
+      MPI_Bcast(b, N, MPI_INT, 0, MPI_COMM_WORLD);
+      //proces P0 niz b od N elemenata tipa MPI_INT salje od ka svim ostalim procesima, ukljucujuci u P0
+      
+      local_c = 0;
+      for(i = 0; i < N; i++)
+      {
+            local_c += local_a[i] * b[i];
+      }
+      
+      //Rezultat je u procesu P0:
+      MPI_Gather(&local_c, 1, MPI_INT, &c[0], 1, MPI_INT, 0, MPI_COMM_WORLD);
+      //sada iz promenljive local_c svakog procesa uzimamo po 1 element tipa MPI_INT i smestamo ga u promenljivu c
+      //procesa P0, na kraju ce u promenjivoj c biti ceo vektor koji predstavlja kompletan proizvod A * b
+      
+      if(rank == 0)
+      {
+            printf("c= [");
+            for(i = 0; i < N; i++)
+                  printf("%d ", c[i]);
+            pritnf("]\n");
+      }
+}
+```
+
+6. Napisati MPI program koji pronalazi i prikazuje minimalni neparan broj sa zadatom osobinom i identifikator procesa koji ga sadrži. Neparni brojevi se nalaze u intervalu [a,b] (a i b su zadate kontante). Osobina koju broj treba da poseduje je da je deljiv zadatom vrednošću x. Prilikom ispitivanja (da li broj poseduje datu osobinu ili ne) svaki proces generiše i ispituje odgovarajuće neparne brojeve način prikazan na slici. Za primer broj_proces = 4 i a = 3, b = 31, x = 5. Konačne rezultate treba da prikaže proces koji sadrži najmanji broj takvih brojeva. Zadatak rešiti korišćenjem grupnih operacija. 
+
+> ![enter image description here](https://i.imgur.com/HTAOVul.jpg)
+
+```c
+#include <mpi.h>
+#include <stdio.h>
+#define a 5
+#define b 31
+#define x 5
+
+void main(int argc, char** argv)
+{
+     struct { int value; int rank; } f, c, d, e;
+     int my_rank, p, b1 = 0, z, min = INT_MAX;
+     
+     MPI_Init(&argc, &argv);
+     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+     MPI_Comm_size(MPI_COMM_WORLD, &p);
+     
+     for(z = a + 2*my_rank; z <= b; z+= p*2)
+     {
+            if(z%x == 0)
+            {
+                   b1++;
+                   if(z<min) 
+                       min = z;
+            }
+     }
+     
+     c.value = min;
+     c.rank = my_rank;
+     d.value = b1;
+     d.rank = my_rank;
+     
+     MPI_Reduce(&d, &e, 1, MPI_2INT, MPI_MINLOC, 0, MPI_COMM_WORLD);
+     MPI_Bcast(&e, 1, MPI_2INT, 0, MPI_COMM_WORLD);
+     MPI_Reduce(&c, &f, 1, MPI_2INT, MPI_MINLOC, e.rank, MPI_COMM_WORLD);
+     
+     if(my_rank == e.rank)
+          printf("%d %d", f.value, f.rank);
+     
+     MPI_Finalize();
+}
+```
+
+7. Napisati MPI program koji pronalazi  proizvod matrice Amxn i vektora bn. Matrica A i vektor b se inicijalizuju u procesu 0. Izračunavanje se obavlja tako što se svakom procesu distribuira po kolona matrice A i po 1 element vektora b. Za distribuciju kolona po procesima koristiti Point-to-point operacije, za sve ostalo grupne operacije. Svi procesi učestvuju u izračnavanju. Rezultat se prikazue u procesu koji, nakon distribuiranja kolona matrice A, sadrži minimum svih elemenata matrice A. 
+
+> ![enter image description here](https://i.imgur.com/6LdmemU.jpg)
+
+```c
+#include <mpi.h>
+#define m 4
+#define n 3
+
+void main(int argc, char** argv)
+{
+       int a[m][n], b[n], rank, p, i, j;
+       int lc[m], c[m], y[m], x[m], z;
+       struct { int valuel int rank; } min, gmin;
+       
+       MPI_Init(&argc, &argv);
+       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+       MPI_Comm_size(MPI_COMM_WORLD, &p);
+       
+       if(rank == 0)
+       {
+            for(i = 0; i < M; i++)
+            {
+                   for(j = 0; j < N ;j++)
+                   {
+                          a[i][j] = i + j;
+                   }
+            }
+            
+            for(i = 0; i < N; i++)
+            {
+                  b[j] = 1;
+            }
+       }
+       
+       if(rank == 0)
+       {
+            for(i = 0; i < m; i++)
+                  x[i] = a[i][0];
+
+            for(j = 1; j < p; j++)
+            {
+                 for(i = 0; i < m; i++)
+                 {
+                       y[i] = a[i][j];
+                 }
+                 MPI_Send(y, m, MPI_INT< j, 0, MPI_COMM_WORLD);
+            }
+       }
+       else 
+       {
+            MPI_Recv(x, m, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
+       }
+       
+       MPI_Scatter(&b[0], 1, MPI_INT< &z, 1, MPI_INT, 0, MPI_COMM_WORLD);
+       
+       for(i = 0; i < m; i++)
+              lc[i] = x[i] * z;
+       
+       min.value = INT_MAX;
+       for(i = 0; i < m; i++)
+       {
+            if(x[i] < min.value)
+            {
+                 min.value = x[i];
+                 min.rank = rank;
+            }
+       }
+       
+       MPI_Reduce(&min, &gmin, 1, MPI_2INT, MPI_MINLOC, 0, MPI_COMM_WORLD);
+       MPI_Bcast(&gmin, 1, MPI_2INT, 0, MPI_COMM_WORLD);
+       MPI_Reduce(lc, c, m, MPI_INT, MPI_SUM, gmin.rank, MPI_COMM_WORLD);
+       
+       if(rank == gmin.rank)
+       {
+            for(i = 0; i < m; i++)
+            {
+                  printf("c[%d] = %d\n", i, c[i]);
+                  printf("gmin = %d", gmin.value);
+            }
+       }
+       
+       MPI_Finalize();
+}
+```
