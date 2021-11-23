@@ -1,27 +1,27 @@
-#define k 10
-#define m 7 
-#define n 6
-#define l 2
-
-void main(int argc, char** argv)
+#define k
+#define m
+#define n
+#define l  
+void main(int argc, char **argv)
 {
-    int a[k][m], b[m][n], c[k][n], rank, size, i, j, q, p;
+    int a[k][m], b[m][n], c[k][n], i, j, q, p;
+    int rank, size;
     int master = 0;
-    struct { int value; int rank; } max, gmax;
-    int parcijalColProd[m], colProd[m];
-    
+    int local_a[l][m];
+    struct { int val; int rank; } max, gmax;
+
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     if(rank == master) 
     {
-        //inicijalizacija a i b
+        //inicijalizacija
         for(i=0;i<k;i++)
         {
             for(j=0;j<m;j++)
             {
-                a[i][j] = i + j;
+                a[i][j] = i+j;
             }
         }
 
@@ -34,69 +34,75 @@ void main(int argc, char** argv)
         }
     }
 
-    //proizvod A x B = C
-    //master salje svima po l vrsta (l deli k) i celu matricu B
-    //rezultat je u procesu koji ima max svih vrednosti u matrici C
+    //master salje svakom procesu po l vrsta matrice A, gde je k deljivo sa l, 
+    //i celu matricu B
 
-    if(rank == master)
+    if(rank == master) 
     {
-        MPI_Scatter(&a[0][0], l * m, MPI_INT, &Lvrsta[0][0], l * m, MPI_INT, master, MPI_COMM_WORLD);
-        //dobijamo mini matrice l x m
+        MPI_Scatter(&a[0][0], l * m, MPI_INT, &local_a[0][0], 1, MPI_INT, master, MPI_COMM_WORLD);
         MPI_Bcast(&b[0][0], m * n, MPI_INT, master, MPI_COMM_WORLD);
     }
 
-    max.value = INT_MIN;
-
+    //prozivod A[k][m] x B[m][n] = C[k][n]
+    int localProd[l][n];//inicijalizovati elemenete na sve 0!
+    max.val = INT_MIN;
+    int localColProd[m];//inicijalizovati sve elemente na 1!
+    int colProd[m];
     for(i=0;i<l;i++)
     {
-        //mnozimo matricu l x m i matricu b (m x n) i dobijamo matricu l x n
-        //za svaku vrstu od l 
-        for(j=0;j<n;j++)
+        //za svaku kolonu (od njih l) matrice A u trenutnom prosu rank
+        //svaku treba pomonoziti sa svakom od vrsta matrice b
+        //b[m][n], mini matrica A u procesu je local_a[l][m]
+        for(j=0;j<n;j++) 
         {
-            parcijalC[i][j] = 0;
-            for(h=0;h<m;h++)
+            localProd[i][j] = 0;
+            for(q=0;q<m;q++) 
             {
-                parcijalC[i][j] += Lvrsta[i][h] * b[h][j];
+                localProd[i][j] += local_a[i][q] * b[q][j];
             }
-
-            if(pacijalc[i][j] > max.value)
+            //treba nam maximum matrice A i  rank njenog procesa
+            if(localProd[i][j] > max.val)
             {
-                max.value = pacijalc[i][j];
+                max.val = localProd[i][j];
                 max.rank = rank;
             }
         }
-        for(j=0;j<m;j++)
+
+        //treba nam i prozivod elemenata matrice A po kolonama 
+        //a mi elemente imamo po vrstama...
+
+        for(i=0;i<m;i++)
         {
-            parcijalColProd[j] *= Lvrsta[i][j];
+            localColProd[i] *= local_a[i][j];
         }
     }
 
     MPI_Reduce(&max, &gmax, 1, MPI_2INT, MPI_MAXLOC, master, MPI_COMM_WORLD);
     MPI_Bcast(&gmax, 1, MPI_2INT, master, MPI_COMM_WORLD);
 
-    MPI_Gather(&parcijalC[0][0], l * n, MPI_INT, &c[0][0], l * n, gmax.rank, MPI_COMM_WORLD);
-    MPI_Reduce(&parcijalColProd[0], &colProd[0], m, MPI_INT, MPI_PROD, gmax.rank, MPI_COMM_WORLD);
+    MPI_Gather(&localProd[0][0], l*n, MPI_INT, &c[0][0], 1, MPI_INT, gmax.rank, MPI_COMM_WORLD);
 
+    MPI_Reduce(&localColProd[0], &colProd[0], m, MPI_INT, MPI_PROD, gmax.rank, MPI_COMM_WORLD);
+    
     if(rank == gmax.rank)
     {
-        printf("Proizvod A x B = C:");
+        printf("Prozivod A x B = C:");
         for(i=0;i<k;i++)
         {
             for(j=0;j<n;j++)
             {
-                printf("c[%d][%d] = %d ", i, j, c[i][j]);
+                printf("c[%d][%d]=%d ", i, j, c[i][j]);
             }
-            printf("\n");
+            pritnf("\n");
         }
 
-        printf("Proizvod elemenata matrice A po kolonama:");
+        pritnf("Maximum matrice A je %d.", gmax.value);
+
+        printf("Proizvodi elemenata po kolonama matrice A su:");
         for(i=0;i<m;i++)
         {
-            printf("prozvod po koloni %d je %d\n", i, colProd[i]);
+            pritf("kolona %d = %d\n", i, colProd[i]);
         }
-
-        printf("Max vrednost matrice A je %d sa rankom %d.", gmax.value, gmax.rank);
     }
 
-    MPI_Finalize();
 }
