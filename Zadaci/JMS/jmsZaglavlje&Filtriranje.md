@@ -63,7 +63,8 @@ Primer. Poruku šaljemo samo ako je ime "distribuirani" i ako je prioritet veći
 Name='distribuirani' AND JMSPriority>5
 ```
 
-## Zadatak. Generisati centralni IS koji omogućava sestri da prijavi pacijenta koji je došao kod određenog lekara. Po okončanju posete treba da odštampa informacije o pregledu. Iz uloge lekara dobija se koji je pacijent na redu, po završetku lekar obaveštava da je završio pregled. Uvedena i treća komponenta - ROTO čekaonica - prikazuje listu trenutnih pacijenata po lekaru. 
+## Zadatak. 
+Generisati centralni IS koji omogućava sestri da prijavi pacijenta koji je došao kod određenog lekara. Po okončanju posete treba da odštampa informacije o pregledu. Iz uloge lekara dobija se koji je pacijent na redu, po završetku lekar obaveštava da je završio pregled. Uvedena i treća komponenta - ROTO čekaonica - prikazuje listu trenutnih pacijenata po lekaru. 
 
 ![alt text](https://i.imgur.com/Bz1whpv.jpg)
 
