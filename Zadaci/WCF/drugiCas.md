@@ -198,6 +198,7 @@ namespace Klijent
 
         public Form1()
         {
+            InitializeComponent();
             proxy = new CalcClient(new InstanceContext(this));
         }
 
