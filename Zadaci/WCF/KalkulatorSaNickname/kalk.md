@@ -1,4 +1,4 @@
-```chsarp
+```csharp
 /* KALKULATOR U KOME SE PAMTI NADIMAK KLIJENTA TJ VLASNIKA KALKULATORA */
 //na snimku 11. DS-R [31.5.2021] prica o tome malo od 1:12:00
 //uradicu samo sa DODAJ(d)
