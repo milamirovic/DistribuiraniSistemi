@@ -59,13 +59,14 @@ namespace WcfChat
             if(!nicknameCallbacks.ContainsKey(nickname))
             {
                 nicknameCallbacks.Add(nickname, callback);
-                return "Uspesan login!";
             }
             else 
             {
                 //vec postoji taj user u sistemu
                 //pise da ako se registruje isti nickname, smatrati da je prethodna sesija prestala da vazi
-                return "Vec ulogovan korisnik!";
+                IChatCallback callback = nicknameCallbacks[nickname];
+                nicknameCallbacks.Remove(nickname);
+                nicknameCallbacks.Add(nickname, callback); 
             }
         }
 
@@ -161,7 +162,7 @@ namespace Klijent
             ulogovan = true;
             string nickname = txtNicknameLogin.Text;
             this.nickname = nickname;
-            lblLoginOdgovor.Text = proxy.login(nickname);
+            proxy.login(nickname);
         }
 
         private void btnSaljiPorukuSvima_Click(object sender, EventArgs e)
