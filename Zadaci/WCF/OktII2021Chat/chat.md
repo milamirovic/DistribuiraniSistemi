@@ -139,6 +139,13 @@ namespace Klijent
         private string nickname;
         private bool ulogovan = false;
 
+        public Form1()
+        {
+            InitializeComponent();
+            ulogovan = false;
+            proxy = new ChatClient(InstanceContext(this));
+        }
+
         //implementacija od IChatCallback
         public void PosaljiPorukuCallback(Chat chatPoruka)
         {
