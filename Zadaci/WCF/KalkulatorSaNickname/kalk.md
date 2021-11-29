@@ -28,7 +28,7 @@ namespace WcfKalkulator
 
 namespace WcfKalkulator
 {
-    [ServiceBehaviour(InstanceContentMode = InstanceContentMode.PerSession)]
+    [ServiceBehaviour(InstanceContentMode = InstanceContentMode.Single)]
     public class Kalkulator : IKalkulator
     {
         private string nickname;
