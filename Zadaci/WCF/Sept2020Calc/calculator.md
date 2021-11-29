@@ -1,3 +1,16 @@
+```xml
+<system.serviceModel>
+    <services>
+        <service name = "WcfCalculator.Calculator">
+            <endpoint
+            binding = "wsDualHttpBinding"
+            contract = "WcfCalculator.ICalculator"
+            address = ""
+            />
+        </service>
+    </services>
+</system.serviceModel>
+```
 ```csharp
 namespace WcfCalculator 
 {
