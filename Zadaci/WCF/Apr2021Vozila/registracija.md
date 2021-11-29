@@ -138,17 +138,17 @@ namespace Klijent
                 model = txtModelVozila.Text;
                 boja = txtBojaVozila.Text;
 
-                String odgovor = proxy.RegistrujVozilo(new Vlasnik({
+                String odgovor = proxy.RegistrujVozilo(new Vlasnik(){
                     Ime = ime,
                     Prezime = prezime,
                     Jmbg = jmbg
-                }), 
-                new Vozilo({
+                }, 
+                new Vozilo(){
                     Id = id, 
                     Marka = marka,
                     Model = model,
                     Boja = boja
-                }));
+                });
 
                 lblOdgovor.Text = odgovor;
             }
@@ -165,11 +165,11 @@ namespace Klijent
             prezime = txtPrezimeVlasnika1.Text;
             jmbg = txtJmbgVlasnika1.Text;
 
-            List<Vozila> lista = proxy.VratiListuVozilaVlasnika(new Vlasnik({
+            List<Vozila> lista = proxy.VratiListuVozilaVlasnika(new Vlasnik(){
                 Ime = ime, 
                 Prezime = prezime, 
                 Jmbg = jmbg
-            }));
+            });
 
             String zaPrikaz = "Vozila vlasnika " + ime + " " + prezime + "[" + jmbg + "] su:\n";
             foreach(Vozilo v in lista)
