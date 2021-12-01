@@ -71,3 +71,19 @@ DS treba da skriva od korisnika činjenicu da su njegovi procesi i resursi fizi�
 # Otvorenost DS-a 
 
 Otvoreni DS dozvoljava dodavanje novih servisa i omogućava dostupnost servisima od strane različitih klijenata. Npr, Web servisu može se pristupiti preko mnogo različitih klijenata - Chrome, Opera, Explorer itd. 
+Otvoreni DS je sistem koji nudi servise tj. usluge. Kod DS-a usluge su definisane interfejsima koji definišu kako se pristupa uslugama. Interfejsi se opisuju pomoću posebnog jezika - **IDL**-a (*Interface Definition Language*).
+
+# Skalabilnost DS-a
+
+Skalabilnost ili proširljivost DS-a posmatra se kroz 3 dimenzije:
+- skalabilnost u odnosu na broj korisnika i resursa
+- skalabilnost u odnosu na geografsku udaljenost resursa i korisnika
+- administrativna skalabilnost (sistem može imati i više administrativnih domena)
+
+Da bi skalabilnost bila izvodljiva, moraju se koristiti **decentralizovani algoritmi**, podaci i usluge. 
+
+Decentralizovani algoritmi imaju sledeće osobine: 
+- ni jedna mašina nema kompletnu informaciju o stanju sistema
+- mašine donose odluku samo na osnovu lokalnih podataka 
+- otkaz jedne mašine ne narušava sistem
+- nema pretpostavke o postajanju globalnog časovnika 
