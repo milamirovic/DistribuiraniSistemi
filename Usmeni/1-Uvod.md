@@ -78,7 +78,7 @@ Postoje 3 tehnike skaliranja tj. proširivanja DS-a:
 3. **Replikacija**
     - Pomaže da se poveća dostupnost i balansira opterećenje u sistemu da bi se postigle bolje performanse. U geografski distribuiranim sistemima poželjno je da postoji kopija resursa blizu mesta korišćenja da bi se smanjilo komunikaciono kašnjenje. 
 
-> # Problemi tehnika skalirinja 
+> # Problemi tehnika skaliranja 
 > - Postojanje više kopija dovodi do problema konzistencije - modifikacija jedne kopije dovodi do neslaganja sa ostalim kopijama. Da bi sve kopije bile sinhronizovane, potrebna je globalna sinhronizacija koju je gotovo nemoguće postići u distribuiranom sistemu. 
 
 # Middleware 
