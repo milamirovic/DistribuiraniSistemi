@@ -122,7 +122,7 @@ Koriste se za izvršenje visokoperformansnih zadataka i to su:
 
 ***Transakcija je skup operacija koje se obavljaju kao jedna nedeljiva (atomična) operacija.***
 
-***Sistem za obradu transakcija obezbeđuje da sve ili ni jedna operacija u transakciji budu izvršene bez greške. ***
+***Sistem za obradu transakcija obezbeđuje da sve ili ni jedna operacija u transakciji budu izvršene bez greške.***
 
 Nakon obavljanja transakcije, sistem mora da bude u poznatom **konzistentnom stanju**, tako što obezbeđuje da se ili sve operacije koje su međusobno zavisne izvrše ili da se ni jedna od njih ne izvrši.
 
