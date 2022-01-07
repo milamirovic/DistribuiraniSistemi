@@ -234,4 +234,7 @@ public class Klijent
             else System.out.println("Pogresan unos!");
         }
     }
+    
+    k.zatvori();
+    System.exit(0);
 }
