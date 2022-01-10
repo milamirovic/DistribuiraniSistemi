@@ -150,17 +150,13 @@ namespace WcfRegistracijaVozila
     }
 }
 
-namespace Klijent 
+namespace KlijentBezForme
 {
     public class Program
     {
         static void Main(string[] args)
         {
             RegistracijaVozilaClient proxy = new RegistracijaVozilaClient();
-
-            /*
-
-            public Dictionary<Vozilo, Vlasnik> SvaVozilaIVlasnici();*/
 
             while(true)
             {
@@ -255,6 +251,83 @@ namespace Klijent
         }
     }
 }
+
+namespace KlijentForm
+{
+    public class Form1 : Form
+    {
+        private RegistracijaVozilaClient proxy = new RegistracijaVozilaClient();
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        public void btnRegistrujVozilo(object sender, EventArgs e)
+        {
+            string ime = txtIme.Text;
+            string prezime = txtPrezime.Text;
+            string jmbg = txtJmbg.Text;
+
+            string marka = txtMarka.Text;
+            string model = txtModel.Text;
+            string boja = txtBoja.Text;
+
+            proxy.RegistrujVozilo(new Vlasnik()
+            {
+                Ime = ime, Prezime = prezime, Jmbg = jmbg
+            }, new Vozilo()
+            {
+                Marka = marka, Model = model, Boja = boja
+            });
+        }
+
+        public void btnVozilaVlasnika(object sender, EventArgs e)
+        {
+            string ime = txtIme2.Text;
+            string prezime = txtPrezime2.Text;
+            string jmbg = txtJmbg2.Text;
+
+            List<Vozilo> rez = proxy.VozilaVlasnika(new Vlasnik()
+            {
+                Ime = ime, Prezime = prezime, Jmbg = jmbg
+            });
+
+            String zaPrikaz = "Vozila datog vlasnika su:\n";
+
+            foreach(Vozilo v in rez)
+            {
+                zaPrikaz += v.Marka + " " + v.Model + " " + v.Boja + "\n";
+            }
+
+            lblZaPrikaz.Text = zaPrikaz;
+        }
+
+        public void btnVlasniciModela(object sender, EventArgs e)
+        {
+            string model = txtModel2.Text;
+            List<Vlasnik> rez = proxy.VlasniciModela(model);
+            String prikaz = "Vlasnici datog modela su:\n";
+            foreach(Vlasnik v in rez)
+            {
+                prikaz += v.Ime + " " + v.Prezime + " " + v.Jmbg + "\n";
+            }
+            lblPrikaz2.Text = prikaz;
+        }
+
+        public btnSvaVozilaIVlasnici(object sender, EventArgs e)
+        {
+            Dictionary<Vozilo, Vlasnik> rez = proxy.SvaVozilaIVlasnici();
+            string prikazz = "Sva vozila i njihovi vlasnici:\n";
+            foreach(KeyValuePair<Vozilo, Vlasnik> kvp in rez)
+            {
+                prikaz += "Vozilo[" + kvp.Key.Marka + ", " + kvp.Key.Model + ", " + kvp.Key.Boja + "] - Vlasnik [" + kvp.Value.Ime + ", " + kvp.Value.Prezime + ", " + kvp.Value.Jmbg + "]\n";
+            }
+        }
+    }
+}
+
+
 ```
 ```xml
 <system.serviceModel>
