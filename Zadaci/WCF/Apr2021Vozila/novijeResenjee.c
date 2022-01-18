@@ -197,7 +197,7 @@ namespace WcfRegistracijaVozila.Klijent
             ime = txtIme.Text;
             prezime = txtPrezime.Text;
             jmbg = txtJmbg.Text;
-            List<Voilo> rez = proxy.VratiVozilaVlasnika(new Vlasnik
+            List<Voilo> rez = proxy.VratiVozilaVlasnika(new Vlasnik()
             {
                 Ime = ime, Prezime = prezime, Jmbg = jmbg
             });
@@ -290,11 +290,11 @@ namespace WcfRegistracijaVozila.Klijent
                     model = Console.ReadLine();
                     boja = Console.ReadLine();
 
-                    proxy.RegistrujVozilo(new Vlasnik
+                    proxy.RegistrujVozilo(new Vlasnik()
                     {
                         Ime = ime, Prezime = prezime, Jmbg = jmbg
                     }, 
-                    new Vozilo
+                    new Vozilo()
                     {
                         Id = id, Marka = marka, Model = model, Boja = boja
                     });
