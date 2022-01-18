@@ -1,11 +1,11 @@
 Ako je poenta da svaki klijent ima svoj kalkulator, da ga ne dele medjusobno, onda se treba koristiti PerSession opcija. Ovo je verzija sa callback-om. 
 
 Kada imamo _callback_ i koristimo **_PerSession_**:
-		* onda se u interfejsu **_IKalkulator_** pise: **[ServiceContract(CallbackContract = typeof(IKalkulatorCallback), SessionMode = SessionMode.Required)]**
-		* mora da se napravi interfejs **_IKalkulatorCallback_** koji ima callback metodu: **public void VratiRezultat(Rezultat r)** koja zapravo samo stampa rezultat.
-		* onda se u klasi **_Kalkulator_** koja implementira interfejs IKalkulator pise **[ServiceBehaviour(InstanceContentMode = InstanceContentMode.PerSession)]**
-		* i u toj klasi moramo da imamo ATRIBUT **IKalkulatorCallback callback**. On dobija vrednost u konstruktoru **Kaluklator() { this.callback = OperationContext.Current.GetCallbackChannel<IKalkulatorCallback>(); }**
-		* onda u klijent klasi (Form ili Program) moramo da imamo atribut KalkulatorClient proxy = new KalkulatorClient(new InstanceContext(this));
+* onda se u interfejsu **_IKalkulator_** pise: **[ServiceContract(CallbackContract = typeof(IKalkulatorCallback), SessionMode = SessionMode.Required)]**
+* mora da se napravi interfejs **_IKalkulatorCallback_** koji ima callback metodu: **public void VratiRezultat(Rezultat r)** koja zapravo samo stampa rezultat.
+* onda se u klasi **_Kalkulator_** koja implementira interfejs IKalkulator pise **[ServiceBehaviour(InstanceContentMode = InstanceContentMode.PerSession)]**
+* i u toj klasi moramo da imamo ATRIBUT **IKalkulatorCallback callback**. On dobija vrednost u konstruktoru **Kaluklator() { this.callback = OperationContext.Current.GetCallbackChannel<IKalkulatorCallback>(); }**
+* onda u klijent klasi (Form ili Program) moramo da imamo atribut KalkulatorClient proxy = new KalkulatorClient(new InstanceContext(this));
   
 ```csharp
 namespace WcfKalkulator  
