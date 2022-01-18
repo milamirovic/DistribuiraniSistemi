@@ -177,3 +177,18 @@ namespace WcfKlijent
     }
 }
 ```
+
+  
+Web.config
+```html
+<system.serviceModel>
+    <services>
+        <service name="WcfKalkulator.Kalkulator">
+            <endpoint 
+            binding = "wsDualHttpBinding"
+            constact = "WcfKalkulator.IKalkulator"
+            />
+        </service>
+    </services>
+</system.serviceModel>
+```
