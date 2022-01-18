@@ -83,7 +83,13 @@ namespace WcfKalkulator
 
         public void Oduzmi(decimal d)
         {
-            Dodaj(-d);
+            this.vrednost -= d;
+            this.izraz += " - " + d.ToString();
+
+            Callback.VratiRezultat(new Rezultat()
+            {
+                Vrednost = vrednost, Izraz = izraz
+            });
         }
 
         public void Pomnozi(decimal d)
@@ -110,7 +116,12 @@ namespace WcfKalkulator
             }
             else
             {
-                Pomnozi(1/d);
+                this.vrednost /= d;
+                this.izraz += " / " + d.ToString();
+                Callback.VratiRezultat(new Rezultat()
+                {
+                    Vrednost = vrednost, Izraz = izraz
+                });
             }
         }
 
