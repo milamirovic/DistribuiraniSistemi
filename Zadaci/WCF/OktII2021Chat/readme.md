@@ -7,6 +7,7 @@ namespace WcfChat
         [OperationContract]
         public void Registracija(string nickname);
 
+        //ove dve ce raditi sa callback-om:
         [OperationContract(IsOneWay = true)]
         public void PosaljiPoruku(string primalac, string text);
 
