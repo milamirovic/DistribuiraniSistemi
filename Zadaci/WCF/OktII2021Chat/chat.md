@@ -1,125 +1,37 @@
-```csharp
 namespace WcfChat
 {
     [ServiceContract(CallbackContract = typeof(IChatCallback), SessionMode = SessionMode.Required)]
-    public interface IChat
+    public interface ICallback 
     {
         [OperationContract]
-        public string Login(string nickname);
+        public void Registracija(string nickname);
 
-        [OperationContract]
-        public string PosaljiPoruku(string primalac, string tekstPoruke, strin posiljalac);
+        [OperationContract(IsOneWay = true)]
+        public void PosaljiPoruku(string primalac, string text);
 
-        [OperationContract]
-        public List<ChatPoruka> IstorijaPoruka(DateTime od, DateTime do)
+        [OperationContract(IsOneWay = true)]
+        public void MessageHistory(DateTime od, DateTime do);
     }
 
     [DataContract]
-    public class ChatPoruka
+    public class Poruka
     {
-        [DataMember]
-        public string Primalac { get; set; } = "";
+        string text;
+        string primalac;
+        string posiljalac;
+        DateTime vreme;
 
         [DataMember]
-        public string Posiljalac { get; set; } = "";
+        public string Primalac { get; set;}
 
         [DataMember]
-        public DateTime Vreme { get; set; } = DateTime.Now;
+        public string Posiljalac { get; set;}
 
         [DataMember]
-        public string Poruka { get; set; } = "";
+        public string Text { get; set;}
 
-        public ChatPoruka()
-        {
-
-        }
-
-        public ChatPoruka(string primalac, string msg, DateTime time, string posiljalac)
-        {
-            Primalac = primalac;
-            Vreme = time;
-            Poruka = msg;
-            Posiljalac = posiljalac;
-        }
-    }
-}
-
-namespace WcfChat 
-{
-    [ServiceBehaviour(InstanceContextMode = InstanceContextMode.Single)]
-    public class Chat : IChat
-    {
-        private List<ChatPoruke> chatPoruke = new List<ChatPoruke>();
-
-        private Dictionary<string, IChatCallback> nicknameCallbacks = new Dictionary<string, IChatCallback>();
-
-        public string Login(string nickname)
-        {
-            IChatCallback callback = OperationContext.Current.GetCallbackChannel<IChatCallback>();
-            if(!nicknameCallbacks.ContainsKey(nickname))
-            {
-                nicknameCallbacks.Add(nickname, callback);
-            }
-            else 
-            {
-                //vec postoji taj user u sistemu
-                //pise da ako se registruje isti nickname, smatrati da je prethodna sesija prestala da vazi
-                IChatCallback callback = nicknameCallbacks[nickname];
-                nicknameCallbacks.Remove(nickname);
-                nicknameCallbacks.Add(nickname, callback); 
-            }
-        }
-
-        public string PosaljiPoruku(string primalac, string tekstPoruke, string posiljalac)
-        {
-            ChatPoruka chatPoruka = new ChatPoruka(primalac, DateTime.Now, tekstPoruke, posiljalac);
-            if(primalac == "SVI")
-            {
-                //ako je namenjena svima, stize trenutno aktivnim userima
-                List<string> aktivniUseri = new List<string>();
-                foreach(KeyvaluePair<string, IChatCallback> entry in nicknameCallbacks)
-                {
-                    aktivniUseri.Add(entry.Key);
-                }
-                //sada imamo listu nickname-ova svih aktivnih usera
-                foreach(string s in aktivniUseri)
-                {
-                    IChatCallback callback = nicknameCallbacks[s];//uzmemo value deo iz dict
-                    callback.PosaljiPorukuCallback(chatPoruka);
-                }
-            }
-            else 
-            {
-                //onda je naveden username konkretnog usera
-                if(nicknameCallbacks.ContainsKey(primalac))
-                {
-                    //ako ga ima medju registrovanima onda mu se salje
-                    IChatCallback callback = nicnameCallbacks[primalac];
-                    callback.PosaljiPorukuCallback(chatPoruka);
-                }
-                else 
-                {
-                    //tog usera nema medju registrovanima...
-                    return "Primalac nije registrovan!";
-                }
-            }
-            //dodaj u istoriju poruka:
-            chatMessages.Add(chatPoruka);
-            return "Poruka poslata!";
-        }
-
-        public List<ChatPoruka> IstorijaPoruka(DateTime od, DateTime do) 
-        {
-            List<ChatPoruka> messages = new List<ChatPoruka>()''
-            foreach(ChatPoruka c in this.chatPoruke)
-            {
-                if(c.Vreme >= od && c.Vreme <= do)
-                {
-                    messsages.Add(c);
-                }
-            }
-            return messages;
-        }
+        [DataMember]
+        public DateTime Vreme { get; set;}
     }
 }
 
@@ -128,105 +40,179 @@ namespace WcfChat
     public interface IChatCallback
     {
         [OperationContract(IsOneWay = true)]
-        public void PosaljiPorukuCallback(ChatPoruka chatPoruka);
+        public void PosaljiPorukuCallback(Poruka p);
+
+        [OperationCOntract(IsOneWay = true)]
+        public void MessageHistoryCallback(string zaPrikaz);
     }
 }
 
-namespace Klijent
+namespace WcfChat.Data 
 {
-    public class Form1: Form, IChatCallback
+    public class Repository
     {
-        private ChatClient proxy;
-        private string nickname;
-        private bool ulogovan = false;
+        private static Repository instance;
+        private static object locker = true;
 
-        public Form1()
+        public static Repository Instance
         {
-            InitializeComponent();
-            ulogovan = false;
-            proxy = new ChatClient(InstanceContext(this));
-        }
-
-        //implementacija od IChatCallback
-        public void PosaljiPorukuCallback(Chat chatPoruka)
-        {
-            lblPrikaziPoruku.Text = chatPoruka.Poruka;
-            lblVreme.Text = chatPoruka.Vreme;
-            lblPosiljalac.Text = chatPoruka.Posiljalac;
-        }
-
-        //eventi sa dugmetom
-
-        private void btnLogin_Click(object sender, EventArgs e)
-        {
-            ulogovan = true;
-            string nickname = txtNicknameLogin.Text;
-            this.nickname = nickname;
-            proxy.login(nickname);
-        }
-
-        private void btnSaljiPorukuSvima_Click(object sender, EventArgs e)
-        {
-            if(ulogovan)
+            get 
             {
-                string poruka = txtTekstPoruke.Text;
-                //salje se svima
-                proxy.PosaljiPoruku("SVI", poruka, this.nickname);
-                lblPorukaPoslata.Text = "Poruka je poslata";
-            }
-            else
-            {
-                lblPorukaPoslata.Text = "Prvo se ulogujte!";
-            }
-        }
-
-        private void btnSaljiPorukuDrugomUseru(object sender, EventArgs e)
-        {
-            if(ulogovan)
-            {
-                string poruka = txtTekstPoruke.Text;
-                string primalac = txtPrimalac.Text;
-                lblPorukaPoslata.Text = proxy.PosaljiPoruku(primalac, poruka, this.nickname);
-            }
-            else
-            {
-                lblPorukaPoslata.Text = "Prvo se ulogujte!";
-            }
-        }
-
-        private void btnPrikaziIstoriju(object sender, EventArgs)
-        {
-            DateTime od = dtp1.Value;
-            DateTime do = dtp2.Value;
-
-            List<ChatPoruka> istorija = proxy.IstorijaPoruka(od, do);
-
-            String zaPrikaz = "Istorija poruka: \n";
-            foreach(ChatPoruka cp in istorija)
-            {
-                if(cp.Primalac == this.nickname || cp.Primalac == "SVI")
+                if(locker)
                 {
-                    //znaci on je primalac
-                    zaPrikaz = zaPrikaz + "posiljalac: " + cp.Posiljalac + " vreme: " + cp.Vreme + " poruka: " + cp.Poruka + "primalac: " + cp.Primalac + "\n";
+                    if(instance == null)
+                    {
+                        instance = new Repository();
+                    }
+                    return instance;
                 }
             }
+        }
 
-            lblIstorija.Text = zaPrikaz;
+        private List<Poruka> privatnePoruke;
+        private List<Poruka> javnePoruke;
+
+        public List<Poruka> JavnePoruke { get; set; }
+        public List<Poruka> PrivatnePoruke { get; set; }
+
+        protected Repository()
+        {
+            this.javnePoruke = new List<Poruka>();
+            this.privatnePoruke = new List<Poruka>();
         }
     }
 }
-```
 
-```xml
-<system.serviceModel>
-    <services>
-        <service name = "WcfChat.Chat">
-            <endpoint 
-                binding = "wsDualHttpBinding"
-                address = ""
-                contract = "IChat"
-            />
-        </service>
-    </services>
-</system.serviceModel>
-```
+namespace WcfChat 
+{
+    [ServiceBehaviour(InstanceContentMode = InstanceContentMode.PerSession)]
+    public class Chat : IChat
+    {
+        private string nickname;
+        private Directory<string, IChatCallback> callbacks;
+
+        public Chat()
+        {
+            callbacks = new Dictionary<string, IChatCallback>();
+        }
+
+        public void Registracija(string nickname)
+        {
+            if(this.callbacks.ContainsKey(nickname))
+            {
+                //pise ako vec postoji user sa tim nickname-om u sistemu smatrati da je 
+                //prethodna sesija prestala da vazi, znaci radimo sledece:
+                IChatCallback callback = this.callbacks[nickname];
+                this.callbacks.Remove(nickname);
+                this.callbacks.Add(nickname, callback);
+                return;
+            }
+            //inace je nov user:
+            this.nickname = nickname;
+            var c = OperationContext.Current.GetCallbackChannel<IChatCallback>();
+            this.callbacks.Add(nickname, c);
+        }
+
+        public Dictionary<string, IChatCallback> Callbacks
+        {
+            get
+            {
+                Registracija(this.nickname);
+                return this.callbacks;
+            }
+        }
+
+        public void PosaljiPoruku(string primalac, string text)
+        {
+            if(primalac == "SVI")
+            {
+                foreach(KeyValuePair kvp in this.callbacks)
+                {
+                    Poruka p = new Poruka()
+                    {
+                        Primalac = kvp.Key, Posiljalac = this.nickname, Text = text, Vreme = DateTime.Now()
+                    };
+                    kvp.Value.PosaljiPorukuCallback(p);
+                    Repository.Instance.JavnePoruke.Add(p);
+                }
+            }
+            else if(this.callbacks.ContainsKey(primalac))
+            {
+                Poruka p = new Poruka()
+                {
+                    Primalac = primalac, Posiljalac = this.nickname, Text = text, Vreme = DateTime.Now()
+                };
+                this.callbacks[primalac].PosaljiPorukuCallback(p);
+                Repository.Instance.PrivatnePoruke.Add(p);
+            }
+        }
+
+        public void MessageHistory(DateTime od, DateTime od)
+        {
+            //istorija primljenih poruka od tog do tog trenutka
+            string zaPrikaz = "Istorija poruka za period od " + od.ToString() + " do " + do.ToString() + ": \n";
+            foreach(Poruka p in Repository.Instance.JavnePoruke)
+            {
+                if(p.Primalac == this.nickname && p.Vreme >= od && p.Vreme <= do)
+                {
+                    zaPrikaz += "Posiljalac: " + p.Posiljalac + " Vreme slanja: " + p.Vreme.ToString() + " - poruka je namenjena svima.\n";
+                }
+            }
+            foreach(Poruka p in Repository.Instance.PrivatnePoruke)
+            {
+                if(p.Primalac == this.nickname && p.Vreme >= od && p.Vreme <= do)
+                {
+                    zaPrikaz += "Posiljalac: " + p.Posiljalac + " Vreme slanja: " + p.Vreme.ToString() + " - poruka nije namenjena svima.\n";
+                }
+            }
+            this.callbacks[this.nickname].MessageHistoryCallback(zaPrikaz);
+        }
+    }
+}
+
+namespace WcfChatClient
+{
+    public class Form : Form1, IChatCallback  
+    {
+        private ChatClient proxy;
+        public Form1()
+        {
+            IntializeComponent();
+            proxy = new ChatClient(new InstanceContext(this));
+        }
+
+        public void PosaljiPorukuCallback(Poruka p)
+        {
+            lblPrimalac.Text = p.Primalac;
+            lblPosiljalac.Text = p.Posiljalac;
+            lblText.Text = p.Text;
+            lblVreme.Text = p.Vreme.ToString();
+        }
+
+        public void MessageHistoryCallback(string zaPrikaz)
+        {
+            lblMessageHistory.Text = zaPrikaz;
+        }
+
+        public void btnRegistracija_Click(object sender, EventArgs e)
+        {
+            string nickname = txtNickname.Text;
+            proxy.Registracija(nickname);
+            MessageBox.Show("Registracija obaveljena!");
+        }
+
+        public void btnPosaljiPoruku_Click(object sender, EventArgs e)
+        {
+            string primalac = txt primalac.Text;
+            string text = txtText.Text;
+            proxy.PosaljiPoruku(primalac, text);
+        }
+
+        public void btnMessageHistory(object sender, EventArgs e)
+        {
+            DateTime od = dateTimePicker1.Value;
+            DateTime do = dateTimePicker2.Value;
+            proxy.MessageHistory(od, do);
+        }
+    }
+}
