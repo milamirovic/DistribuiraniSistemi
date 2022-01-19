@@ -1,3 +1,4 @@
+```csharp
 namespace WcfChat
 {
     [ServiceContract(CallbackContract = typeof(IChatCallback), SessionMode = SessionMode.Required)]
@@ -216,3 +217,16 @@ namespace WcfChatClient
         }
     }
 }
+```
+```html
+<system.serviceModel>
+    <services>
+        <service name = "WcfChat.Chat">
+            <endpoint 
+            binding = "wsDualHttpBinding" 
+            contract = "WcfChat.IChat"
+            />
+        </service>
+    </services>
+</system.serviceModel>
+```
