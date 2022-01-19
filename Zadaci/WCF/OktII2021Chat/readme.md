@@ -229,15 +229,13 @@ namespace WcfChat.Client
         
         public void PosaljiPorukuCallback(Poruka p)
         {
-            lblPrimalac.Text = p.Primalac;
-            lblPosiljalac.Text = p.Posiljalac;
-            lblText.Text = p.Text;
-            lblVreme.Text = p.Vreme.ToString();
+            Console.WriteLine("primalac: " + p.Primalac + ", posiljalac: " + p.Posiljalac + ", vreme: " + p.Vreme.ToString());
+            Console.WriteLine("Poruka: " + p.Text);
         }
 
         public void MessageHistoryCallback(string zaPrikaz)
         {
-            lblMessageHistory.Text = zaPrikaz;
+            Console.WriteLine(zaPrikaz);
         }
 
         Console.WriteLine("REGISTRACIJA:");
