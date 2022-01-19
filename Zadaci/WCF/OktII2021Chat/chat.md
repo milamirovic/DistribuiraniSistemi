@@ -217,6 +217,72 @@ namespace WcfChatClient
         }
     }
 }
+
+//ILI AKO NECEMO FORMU, ONDA PROGRAM.CS
+
+namespace WcfChat.Client
+{
+    public class Program : IChatCallback
+    {
+        ChatClient proxy = new ChatClient(new InstanceContext(this));
+        
+        public void PosaljiPorukuCallback(Poruka p)
+        {
+            lblPrimalac.Text = p.Primalac;
+            lblPosiljalac.Text = p.Posiljalac;
+            lblText.Text = p.Text;
+            lblVreme.Text = p.Vreme.ToString();
+        }
+
+        public void MessageHistoryCallback(string zaPrikaz)
+        {
+            lblMessageHistory.Text = zaPrikaz;
+        }
+
+        Console.WriteLine("REGISTRACIJA:");
+        Console.WriteLine("Unesite svoj nickname:");
+        string nickname = Console.ReadLine();
+
+        proxy.Registracija(nickname);
+
+        Console.WriteLine("Registraija zavrsena!");
+
+        while(true)
+        {
+            Console.WriteLine("Odaberite jednu od opcija:");
+            Console.WriteLine("1 - Poslaji poruku");
+            Console.WriteLine("2 - Pregledaj istoriju primljenih poruka");
+            Console.WriteLine("3 - Izlaz");
+
+            string  odg = Console.ReadLine();
+            if(odg == "3")
+            {
+                break;
+            }
+            else if(odg == "1")
+            {
+                Console.WriteLine("Unesite nickname primaoca:");
+                string primalac = Console.ReadLine();
+                Console.WriteLine("Unesite text poruke:");
+                string text = Console.ReadLine();
+                proxy.PosaljiPoruku(primalac, text);
+                Console.WriteLine("Poruka poslata!");
+            }
+            else if(odg == "2")
+            {
+                Console.WriteLine("Unesite vreme od kog zelite da vidite poruke:");
+                DateTime od = DateTime.Parse(Console.ReadLine());
+                Console.WriteLine("Unesite vreme do kog zelite da vidite poruke:");
+                DateTime do = DateTime.Parse(Console.ReadLine());
+                proxy.MessageHistory(od, do);
+            }
+            else 
+            {
+                Console.WriteLine("Pogresan unos!");
+            }
+        }
+    }
+}
 ```
 ```html
 <system.serviceModel>
