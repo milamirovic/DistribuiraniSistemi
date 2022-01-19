@@ -34,33 +34,33 @@ namespace WcfKalkulator
         private string nickname;
         private decimal vrednost;
         private string izraz;
-        private Dictionary<string, IKalkulatorCallback> nicknameCallbacks;
+        private Dictionary<string, IKalkulatorCallback> callbacks;
 
         public Kalkulator()
         {
-            nicknameCallbacks = new Dictionary<string, IKalkulatorCallback>();
+            callbacks = new Dictionary<string, IKalkulatorCallback>();
         }
 
         public void setNicknameCallbacks(string nickname)
         {
             this.nickname = nickname;
             var c = OperationContext.Current.GetCallbackChannel<IKalkulatorCallback>();
-            if(nicknameCallbacks.ContainsKey(nickname))
+            if(callbacks.ContainsKey(nickname))
             {
                 //vec ima taj nickname registrovan!
             }
             else 
             {
-                nicknameCallbacks.Add(nickname, c);
+                callbacks.Add(nickname, c);
             }
         }
 
-        protected Dictionary<string, IKalkulatorCallback> Callback
+        protected Dictionary<string, IKalkulatorCallback> Callbacks
         {
             get 
             {
                 setNicknameCallbacks(nickname);
-                return nicknameCallbacks;
+                return callbacks;
             }
         }
 
