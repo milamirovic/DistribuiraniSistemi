@@ -2,7 +2,7 @@
 namespace WcfChat
 {
     [ServiceContract(CallbackContract = typeof(IChatCallback), SessionMode = SessionMode.Required)]
-    public interface ICallback 
+    public interface IChat 
     {
         [OperationContract]
         public void Registracija(string nickname);
